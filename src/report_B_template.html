@@ -1,0 +1,436 @@
+<title>측면주사 소나 기뢰 탐지</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@600;700&display=swap">
+<style>
+/* Layout: one reading column (~760px) for prose, figures break out to ~1080px; sections B1-B4 follow Dataset -> Signal processing -> AI -> Discussion. Single-tone graphics are grey; categorical = orange / violet / green */
+:root{
+  --bg:#f5f5f3; --surface:#ffffff; --ink:#1c1c1a; --ink-2:#555552; --ink-3:#86857f;
+  --rule:#dddcd7; --grid:#ecebe7; --accent:#9b4a17; --accent-soft:#f4ebe3;
+  --s1:#eb6834; --s2:#6250d6; --s3:#1baf7a;
+  --good:#1d7a3e; --good-bg:#e5f3ea; --warn:#9a6400; --warn-bg:#fbf1dd;
+  --ramp0:#f6f6f4; --ramp1:#c4c3be; --ramp2:#76756f; --ramp3:#1c1c1a;
+  --f-display:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151514; --surface:#1d1d1c; --ink:#ecebe7; --ink-2:#b3b2ad; --ink-3:#8c8b85;
+  --rule:#33332f; --grid:#262624; --accent:#e58a52; --accent-soft:#33251b;
+  --s1:#d95926; --s2:#9085e9; --s3:#199e70;
+  --good:#6fd394; --good-bg:#16301f; --warn:#e8b45a; --warn-bg:#332611;
+  --ramp0:#1d1d1c; --ramp1:#4a4a46; --ramp2:#9c9b95; --ramp3:#efeee9; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151514; --surface:#1d1d1c; --ink:#ecebe7; --ink-2:#b3b2ad; --ink-3:#8c8b85;
+  --rule:#33332f; --grid:#262624; --accent:#e58a52; --accent-soft:#33251b;
+  --s1:#d95926; --s2:#9085e9; --s3:#199e70;
+  --good:#6fd394; --good-bg:#16301f; --warn:#e8b45a; --warn-bg:#332611;
+  --ramp0:#1d1d1c; --ramp1:#4a4a46; --ramp2:#9c9b95; --ramp3:#efeee9; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1080px;margin:0 auto}
+.col{max-width:760px}
+header{padding-block:48px 28px;border-bottom:1px solid var(--rule)}
+header>*,section>*,.part>*{min-width:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4.4vw,40px);line-height:1.25;margin:.35em 0 .3em;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;font-size:23px;line-height:1.35;margin:0 0 .5em;text-wrap:balance}
+h3{font-size:16px;font-weight:600;margin:0 0 .3em}
+p{margin:0 0 .9em}
+.lede{font-size:17px;color:var(--ink-2)}
+.en{font-family:var(--f-mono);font-size:.84em;color:var(--ink-3);font-weight:400}
+section{padding-block:28px 8px;display:grid;gap:18px}
+.part{border-top:1px solid var(--rule);margin-top:40px;padding-top:28px;display:grid;gap:4px}
+.part .tag{font-family:var(--f-mono);font-size:13px;color:var(--accent);letter-spacing:.06em}
+.part h2{font-size:28px;margin:0}
+.part p{color:var(--ink-2);margin:6px 0 0}
+.mono{font-family:var(--f-mono);font-size:.88em}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2);margin-top:14px}
+.meta b{color:var(--ink);font-weight:500}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.toc a{font-size:13px;text-decoration:none;color:var(--ink-2);border:1px solid var(--rule);border-radius:99px;padding:3px 12px;background:var(--surface)}
+.toc a:hover{color:var(--accent);border-color:var(--accent)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:24px}
+.fact{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:grid;gap:2px;align-content:start}
+.fact .v{font-family:var(--f-mono);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.fact .k{font-size:13px;color:var(--ink-2);line-height:1.5}
+.fact .s{font-size:11.5px;color:var(--ink-3);font-family:var(--f-mono)}
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:600px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-weight:500;color:var(--ink-2);font-size:12px;letter-spacing:.03em;background:var(--bg)}
+td.num,th.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+tr:last-child td{border-bottom:0}
+tr.sum td{font-weight:600;background:var(--bg)}
+tr.ref td{color:var(--ink-3);font-style:italic}
+td.hi{background:var(--accent-soft);font-weight:600}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px}
+figure{margin:0;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 14px 10px;min-width:0;display:grid;gap:6px;align-content:start;position:relative}
+figcaption{font-size:13px;color:var(--ink-2);line-height:1.55}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:14px;height:2px;border-radius:2px}
+.legend i.box{width:10px;height:10px;border-radius:2px}
+.legend i.rect{width:12px;height:9px;border-radius:1px;background:transparent!important;border:2px solid}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{fill:var(--ink-3);font-family:var(--f-mono);font-size:10.5px}
+.chart .axt{fill:var(--ink-2);font-family:var(--f-body);font-size:11px}
+.chart .lbl{fill:var(--ink);font-family:var(--f-mono);font-size:10.5px}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:6px 9px;font-family:var(--f-mono);font-size:11.5px;line-height:1.5;color:var(--ink);box-shadow:0 4px 14px rgb(0 0 0 / .12);white-space:nowrap;z-index:5}
+.tip .sw{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.gallery{display:grid;gap:10px}
+.gallery .row{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center}
+.gallery .lab{font-size:13px;color:var(--ink-2);line-height:1.4}
+.gallery .lab b{color:var(--ink);font-weight:600;display:block}
+.gallery .cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:4px}
+.gallery canvas{width:100%;aspect-ratio:1;border-radius:3px;display:block;image-rendering:auto}
+.frame{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.frame canvas{width:100%;aspect-ratio:1;border-radius:4px;display:block;background:#000}
+.callout{border-left:3px solid var(--warn);background:var(--warn-bg);padding:12px 16px;border-radius:0 6px 6px 0;font-size:14.5px}
+.callout.info{border-color:var(--accent);background:var(--accent-soft)}
+.callout b{color:var(--ink)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px}
+.note{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;font-size:14px;min-width:0}
+.note p{margin:0;color:var(--ink-2)}
+.note .k{font-family:var(--f-mono);font-size:12px;color:var(--accent);display:block;margin-bottom:2px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.step{border-top:2px solid var(--ink-3);padding:10px 2px 4px;display:grid;gap:2px;align-content:start}
+.step .n{font-family:var(--f-mono);font-size:12px;color:var(--ink-3)}
+.step .t{font-weight:600;font-size:14px;line-height:1.45}
+.step .d{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+pre{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;overflow-x:auto;font-family:var(--f-mono);font-size:12.5px;line-height:1.6;margin:0}
+ol.q{margin:0;padding-left:1.3em;display:grid;gap:8px}
+footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink-3)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Active sonar portfolio · Chapter B</div>
+  <h1>측면주사 소나 기뢰 탐지</h1>
+  <div class="col">
+    <p class="lede">AUV에 탑재된 측면주사 소나(side-scan sonar) 영상에서 기뢰 유사물체(MILCO)를 찾는 공개 데이터셋을 다뤘습니다. 데이터를 먼저 진단하고, 영상 신호처리로 표적의 음향 특징을 확인한 뒤, 레퍼런스 AI 모델을 실제 운용 조건(학습에 없던 연도)에서 평가했습니다.</p>
+  </div>
+  <div class="meta" id="meta"></div>
+  <div class="facts" id="facts"></div>
+  <nav class="toc" aria-label="목차"><a href="#b1">B1 데이터셋</a><a href="#b2">B2 신호처리</a><a href="#b3">B3 AI 적용</a><a href="#b4">B4 고찰</a><a href="#repro">재현 방법</a></nav>
+</header>
+
+<!-- ============================================================ B1 -->
+<div class="part" id="b1"><span class="tag">B1</span><h2>데이터셋 <span class="en">dataset screening</span></h2>
+<p class="col">Santos et al.(2024, Data in Brief)이 공개한 Teledyne Gavia AUV의 Marine Sonic 900/1800 kHz 측면주사 영상입니다. 연도별 압축 파일로 받았고, 공개 체크섬과 일치하는 것을 확인했습니다. 모델을 돌리기 전에 Watkins 때와 같은 순서로 데이터 자체를 먼저 점검했습니다.</p></div>
+<section>
+  <div class="tbl"><table id="ytable"><thead><tr><th>연도</th><th>분할</th><th class="num">이미지</th><th class="num">1024 / 416 px</th><th class="num">고유 장면</th><th class="num">빈 장면</th><th class="num">MILCO<br>(고유)</th><th class="num">NOMBO<br>(고유)</th></tr></thead><tbody></tbody></table></div>
+  <div class="notes">
+    <div class="note"><span class="k">점검 1</span><h3>1,170장 중 417장은 축소 복사본</h3><p id="n-dup"></p></div>
+    <div class="note"><span class="k">점검 2</span><h3>객체의 절반 이상이 한 해에 몰림</h3><p id="n-year"></p></div>
+    <div class="note"><span class="k">점검 3</span><h3>표적이 매우 작음</h3><p id="n-size"></p></div>
+    <div class="note"><span class="k">점검 4</span><h3>라벨 없는 유사 물체</h3><p>표적 주변을 잘라 보면, 같은 크기와 하이라이트–그림자를 가진 물체가 라벨 없이 찍혀 있는 장면이 눈으로 확인됩니다. 이런 물체를 탐지하면 평가에서는 오경보로 집계됩니다. 아래 B3의 오경보 수치는 실제보다 나쁘게 나올 수 있습니다.</p></div>
+  </div>
+  <div class="figs">
+    <figure>
+      <h3>연도별 고유 객체 수</h3>
+      <div class="legend"><span><i class="box" style="background:var(--s1)"></i>MILCO 기뢰 유사물체</span><span><i class="box" style="background:var(--s2)"></i>NOMBO 비기뢰 해저물체</span></div>
+      <div class="chart" id="c-year"></div>
+      <figcaption>복사본을 뺀 고유 장면 기준입니다. 학습 연도(2015·2017·2021)와 시험 연도(2010·2018)의 구성이 크게 다릅니다.</figcaption>
+    </figure>
+    <figure>
+      <h3>표적 크기 (1024 px 기준)</h3>
+      <div class="legend"><span><i class="box" style="background:var(--s1)"></i>MILCO</span><span><i class="box" style="background:var(--s2)"></i>NOMBO</span></div>
+      <div class="chart" id="c-size"></div>
+      <figcaption>상자의 폭과 높이(로그 눈금)입니다. 416 px 영상의 표적은 1024 px 축척으로 환산했습니다.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================================================ B2 -->
+<div class="part" id="b2"><span class="tag">B2</span><h2>신호처리 <span class="en">image-domain signal processing</span></h2>
+<p class="col">이 데이터는 원시 신호가 아니라 이미 영상으로 만들어진 상태입니다. 그래서 신호처리는 영상을 다시 "세기 지도"로 되돌리고, 측면주사 소나의 물리(하이라이트와 그림자)를 확인하는 데 집중했습니다.</p></div>
+<section>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><span class="t">색상표 제거</span><span class="d">구리색 의사색상 → 휘도. RGB 분산의 94%가 한 축에 있어 단일 스칼라로 복원됩니다.</span></div>
+    <div class="step"><span class="n">2</span><span class="t">축척 통일</span><span class="d">416 px 영상을 1024 px로 올려 모든 표적을 같은 픽셀 축척에 둡니다.</span></div>
+    <div class="step"><span class="n">3</span><span class="t">수주 구간 검출</span><span class="d">가운데의 어두운 수직 띠(물기둥, nadir)를 찾아 좌현·우현을 나눕니다.</span></div>
+    <div class="step"><span class="n">4</span><span class="t">횡방향 이득 정규화</span><span class="d">열별 중앙값으로 나눠 거리·빔 패턴에 따른 밝기 변화를 평탄화합니다.</span></div>
+    <div class="step"><span class="n">5</span><span class="t">스페클 억제</span><span class="d">3×3 중앙값 필터로 반점 잡음을 줄입니다.</span></div>
+  </div>
+  <div class="figs">
+    <figure>
+      <h3>하이라이트–그림자 신호 <span class="en">across-track signature</span></h3>
+      <div class="legend"><span><i style="background:var(--s1)"></i>MILCO</span><span><i style="background:var(--s2)"></i>NOMBO</span><span><i style="background:var(--ink-3)"></i>배경</span></div>
+      <div class="chart" id="c-sig"></div>
+      <figcaption>표적 중심을 지나는 횡방향 단면의 중앙값입니다. 가로축은 상자 폭 단위이고, 양수 방향이 수주에서 멀어지는 쪽(그림자 쪽)입니다. 세로축은 같은 거리의 주변 해저 대비 dB입니다.</figcaption>
+    </figure>
+    <figure>
+      <h3>표적 패치 <span class="en">oriented patches</span></h3>
+      <div class="gallery" id="gal"></div>
+      <figcaption>모든 패치를 그림자가 오른쪽에 오도록 돌렸습니다. 회색조이며, 위 두 줄은 시험 연도 표적입니다.</figcaption>
+    </figure>
+  </div>
+  <div class="tbl col" style="max-width:760px"><table id="sigtable"><thead><tr><th>부류</th><th class="num">표본</th><th class="num">하이라이트 &gt; +3 dB</th><th class="num">그림자 &lt; −3 dB</th></tr></thead><tbody></tbody></table></div>
+  <div class="callout info col"><b>신호처리가 알려준 것.</b> 하이라이트와 그림자는 <b>물체와 해저 배경을 가르는</b> 강한 근거입니다. 하지만 기뢰 유사물체(MILCO)와 비기뢰 물체(NOMBO)는 거의 같은 비율로 같은 신호를 보입니다. 둘을 가르려면 모양·크기·질감 같은 다른 정보가 필요하며, 이것이 AI에 기대하는 몫입니다.</div>
+</section>
+
+<!-- ============================================================ B3 -->
+<div class="part" id="b3"><span class="tag">B3</span><h2>AI 적용 <span class="en">reference models under operational split</span></h2>
+<p class="col">두 과제를 공식 연도 분할로 평가했습니다. 학습은 2015·2017·2021년, 시험은 2010·2018년(operational)입니다. 시험 연도의 해역·장비 설정·해저 상태는 학습에 한 번도 나오지 않습니다.</p></div>
+<section>
+  <div class="col"><h3>과제 1. 전체 화면에서 표적 찾기 <span class="en">detection</span></h3>
+  <p>YOLOv8n을 썼습니다. CPU만으로 학습하려고 320 px 타일(표적 중심 + 배경)로 학습하고, 탐지는 1024 px 전체 화면에서 했습니다. B2의 고전적 정합필터 탐지기(하이라이트 뒤에 그림자)와 같은 기준으로 비교합니다. 기준은 표적 중심에서 상자 크기 이내의 점을 맞춘 것으로 보고, 화면당 오경보 수에 따른 재현율(FROC)입니다.</p></div>
+  <div class="figs">
+    <figure>
+      <h3>시험 연도 FROC <span class="en">2010 · 2018</span></h3>
+      <div class="legend"><span><i style="background:var(--s1)"></i>YOLOv8n (모든 표적)</span><span><i style="background:var(--s1);opacity:.5"></i>YOLOv8n (MILCO만)</span><span><i style="background:var(--ink-3)"></i>정합필터 (고전적)</span></div>
+      <div class="chart" id="c-froc"></div>
+      <figcaption id="froc-cap"></figcaption>
+    </figure>
+    <figure>
+      <h3>탐지 예시 <span class="en">operational frame</span></h3>
+      <div class="frame" id="frames"></div>
+      <div class="legend"><span><i class="rect" style="border-color:var(--s3)"></i>정답 상자</span><span><i class="rect" style="border-color:var(--s1)"></i>YOLO 탐지 (신뢰도 상위)</span></div>
+      <figcaption id="frame-cap"></figcaption>
+    </figure>
+  </div>
+  <div class="tbl col" style="max-width:760px"><table id="dtable"><thead><tr><th>탐지 지표</th><th class="num">시험 연도</th><th class="num">학습 연도 보류 장면</th></tr></thead><tbody></tbody></table></div>
+
+  <div class="col" style="margin-top:12px"><h3>과제 2. 표적 패치 분류 <span class="en">MILCO / NOMBO / 배경</span></h3>
+  <p>레퍼런스 연구(Mine-JEPA, 2026)와 같은 3분류 과제입니다. 세 모델을 비교했습니다.</p>
+  <ul>
+    <li><b>음향 특징</b>: B2의 하이라이트–그림자 단면, 상자 크기, 수주로부터의 거리를 로지스틱 회귀에 넣은 모델</li>
+    <li><b>DINOv2 고정 특징</b>: 범용 영상 기반 모델의 특징을 그대로 쓰고 선형 분류기만 학습</li>
+    <li><b>DINOv2 미세조정</b>: 마지막 4개 블록까지 학습</li>
+  </ul>
+  <p>세 가지 분할에서 점수를 비교했습니다. 이미지 단위 무작위 분할(복사본 누수 있음), 장면 단위 분할, 연도 분할입니다.</p></div>
+  <div class="figs">
+    <figure>
+      <h3>분할 방식에 따른 3분류 F1</h3>
+      <div class="legend"><span><i class="box" style="background:var(--ink-3)"></i>음향 특징</span><span><i class="box" style="background:var(--s2)"></i>DINOv2 고정</span><span><i class="box" style="background:var(--s1)"></i>DINOv2 미세조정</span></div>
+      <div class="chart" id="c-split"></div>
+      <figcaption>왼쪽에서 오른쪽으로 갈수록 평가가 엄격해집니다. 점선은 레퍼런스 연구의 3분류 F1(0.81–0.82)입니다. 미세조정은 연도 분할에서만 실행했습니다.</figcaption>
+    </figure>
+    <figure>
+      <h3>연도 분할 혼동행렬</h3>
+      <div class="chart" id="c-cm1"></div>
+      <div class="chart" id="c-cm2"></div>
+      <figcaption id="cm-cap"></figcaption>
+    </figure>
+  </div>
+  <div class="tbl"><table id="ptable"><thead><tr><th>모델</th><th>분할</th><th class="num">3분류 F1</th><th class="num">기뢰 vs 나머지 F1</th><th class="num">MILCO 재현율</th><th class="num">NOMBO 재현율</th><th class="num">배경 재현율</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<!-- ============================================================ B4 -->
+<div class="part" id="b4"><span class="tag">B4</span><h2>고찰 <span class="en">discussion</span></h2></div>
+<section>
+  <div class="notes" id="findings"></div>
+  <div class="col">
+    <h3>한계</h3>
+    <ol class="q">
+      <li>CPU만으로 학습해 YOLO는 가장 작은 모델(v8n)을 25에폭 이내로 학습했습니다. 더 큰 모델과 긴 학습으로 수치가 오를 여지가 있습니다.</li>
+      <li>레퍼런스 연구의 정확한 분할 방식이 공개되어 있지 않아 수치를 직접 비교할 수 없습니다. 여기서는 "같은 과제·같은 데이터에서 분할에 따라 얼마나 달라지는가"를 보였습니다.</li>
+      <li>원본 소나 신호가 아니라 내보내기된 JPEG 영상입니다. 이득 조절, 색상표, 압축 손실이 이미 들어가 있어 신호 수준의 처리는 제한됩니다.</li>
+      <li>라벨 없는 유사 물체가 있어, 오경보 수치에는 라벨 누락이 섞여 있습니다.</li>
+    </ol>
+  </div>
+  <div class="col">
+    <h3>남은 질문 (종합 고찰로 넘김)</h3>
+    <ol class="q">
+      <li>연도(해역·장비 설정) 사이의 성능 저하를 줄이는 데 무엇이 가장 효과적인가? 영상 정규화, 도메인 적응, 아니면 해역별 소량 라벨?</li>
+      <li>하이라이트–그림자 물리 특징과 AI 특징을 결합하면 처음 보는 해역에서 더 견고해지는가?</li>
+      <li>원시 신호(챕터 A 같은 정합필터 출력)에 접근할 수 있다면, 영상 이전 단계에서 표적을 더 잘 가를 수 있는가?</li>
+      <li>운용 시나리오에서 허용 가능한 화면당 오경보 수는 얼마인가? 이 값이 모델 선택 기준을 바꾼다.</li>
+    </ol>
+  </div>
+  <div class="callout info col" id="now"></div>
+</section>
+
+<section id="repro">
+  <div class="col">
+    <h2>재현 방법 <span class="en">reproduce</span></h2>
+    <p>데이터는 figshare에 연도별 압축 파일 5개로 공개되어 있습니다(CC BY 4.0). 노트북 CPU 2코어 기준으로 전체 약 2시간이 걸리며, 대부분은 YOLO 학습 시간입니다.</p>
+<pre>screen.py          # B1 중복 장면 검출(고역통과 상관), 연도별 통계
+b2.py              # B2 수주 검출, 이득 정규화, 정합필터 탐지기 FROC
+prep_tiles.py      # 축척 통일 + 320 px 학습 타일
+train_yolo.py      # YOLOv8n 타일 학습
+b3_yolo_eval.py    # 1024 px 전체 화면 탐지, mAP·FROC
+b3_patch.py        # 3분류 패치: 음향 특징 / DINOv2 고정 / 미세조정, 세 가지 분할</pre>
+  </div>
+</section>
+
+<footer class="col">
+  참고: Santos, N. P. et al. (2024) Side-scan sonar imaging data of underwater vehicles for mine detection, Data in Brief 53:110132 · Mine-JEPA (2026) · Oquab et al. DINOv2 · Ultralytics YOLOv8 · 작성: 이종찬 (Lee Jongchan)
+</footer>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(function(){
+const D=JSON.parse(document.getElementById('data').textContent);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const pct=v=>(v*100).toFixed(1)+'%';
+const Y=D.years, YT=['2015','2017','2021'], YO=['2010','2018'], P=D.patch, Yo=D.yolo;
+const sum=(ys,f)=>ys.reduce((a,y)=>a+f(Y[y]),0);
+
+// ---------- header
+const nImg=sum(Object.keys(Y),v=>v.n_images), nSc=sum(Object.keys(Y),v=>v.n_scenes);
+document.getElementById('meta').innerHTML=[['플랫폼','Gavia AUV'],['소나','Marine Sonic 900/1800 kHz'],['기간','2010–2021'],['이미지',nImg.toLocaleString()],['고유 장면',nSc.toLocaleString()],['라이선스','CC BY 4.0']].map(([k,v])=>`<span>${k} <b>${v}</b></span>`).join('');
+const naive=P['naive|dino_lp'].f1_3, scene=P['scene|dino_lp'].f1_3, year=P['year|dino_lp'].f1_3;
+const op=Yo.froc_operational.froc_obj.find(x=>x[0]===1)[1], opMF=D.mf.operational.froc.find(x=>x[0]===1)[1];
+document.getElementById('facts').innerHTML=[
+ [`${nSc} / ${nImg.toLocaleString()}`,'고유 장면 / 이미지. 417장은 축소 복사본','B1'],
+ [`${naive.toFixed(2)} → ${year.toFixed(2)}`,'DINOv2 3분류 F1: 누수 분할 → 연도 분할','B3 · 과제 2'],
+ [P['year|acoustic'].f1_3.toFixed(2),'연도 분할에서 가장 좋은 3분류 F1 (B2 음향 특징 모델)','B3 · 과제 2'],
+ [pct(op),`시험 연도 재현율, 화면당 오경보 1건 (정합필터 ${pct(opMF)})`,'B3 · 과제 1 · YOLOv8n'],
+].map(([v,k,s])=>`<div class="fact"><span class="v">${v}</span><span class="k">${k}</span><span class="s">${s}</span></div>`).join('');
+
+// ---------- B1 table
+let h='';
+['2015','2017','2021','2010','2018'].forEach(y=>{const v=Y[y]; h+=`<tr><td class="num" style="text-align:left">${y}</td><td>${YT.includes(y)?'학습':'시험'}</td><td class="num">${v.n_images}</td><td class="num">${v.n_1024} / ${v.n_416}</td><td class="num">${v.n_scenes}</td><td class="num">${v.n_empty_scenes}</td><td class="num">${v.obj_unique.MILCO}</td><td class="num">${v.obj_unique.NOMBO}</td></tr>`;});
+const tot=k=>sum(Object.keys(Y),v=>k(v));
+h+=`<tr class="sum"><td>합계</td><td></td><td class="num">${tot(v=>v.n_images)}</td><td class="num">${tot(v=>v.n_1024)} / ${tot(v=>v.n_416)}</td><td class="num">${tot(v=>v.n_scenes)}</td><td class="num">${tot(v=>v.n_empty_scenes)}</td><td class="num">${tot(v=>v.obj_unique.MILCO)}</td><td class="num">${tot(v=>v.obj_unique.NOMBO)}</td></tr>`;
+document.querySelector('#ytable tbody').innerHTML=h;
+const uM=tot(v=>v.obj_unique.MILCO), uN=tot(v=>v.obj_unique.NOMBO), aM=tot(v=>v.obj_all.MILCO), aN=tot(v=>v.obj_all.NOMBO);
+document.getElementById('n-dup').textContent=`내보내기 파일 이름(Roboflow 형식)에서 같은 원본 번호가 두 번 나오는 것을 보고, 고역통과 영상 상관으로 확인했습니다. 416 px 영상 417장은 모두 1024 px 원본의 축소본이었고(상관 > 0.95), 라벨도 417쌍 중 416쌍이 일치했습니다. 라벨 수 ${aM}+${aN}개 중 고유 객체는 ${uM}+${uN}개입니다. 이미지 단위로 무작위 분할하면 같은 장면이 학습과 시험에 함께 들어갑니다. 공식 연도 분할에서는 연도를 넘어 공유되는 장면이 없습니다.`;
+const s15=Y['2015'].obj_unique;
+document.getElementById('n-year').textContent=`2015년 한 해에 MILCO ${s15.MILCO}/${uM}개, NOMBO ${s15.NOMBO}/${uN}개가 있습니다. 반대로 시험 연도인 2010·2018년은 장면의 ${pct((Y['2010'].n_empty_scenes+Y['2018'].n_empty_scenes)/(Y['2010'].n_scenes+Y['2018'].n_scenes))}가 표적 없는 빈 화면입니다. 그래서 시험에서는 놓친 표적만큼이나 빈 화면의 오경보가 중요합니다.`;
+const med=a=>{a=[...a].sort((x,y)=>x-y);return a[Math.floor(a.length/2)];};
+document.getElementById('n-size').textContent=`MILCO 상자의 중앙값은 1024 px 축척에서 폭 ${med(D.sizes.MILCO.w).toFixed(0)} px, 높이 ${med(D.sizes.MILCO.h).toFixed(0)} px입니다. 416 px 영상 안에서는 폭 20 px 안팎입니다. 일반 객체 탐지 모델을 기본 해상도(640 px)로 쓰면 표적이 몇 픽셀로 줄어듭니다.`;
+
+// ---------- charts
+function lineChart(el,o){
+  const W=520,H=o.h||260,m={l:46,r:12,t:10,b:o.xlab?38:24},host=document.getElementById(el);
+  const [x0,x1]=o.xr,[y0,y1]=o.yr, xs=o.xlog?(v=>Math.log10(Math.max(v,x0))):(v=>v);
+  const X=v=>m.l+(xs(v)-xs(x0))/(xs(x1)-xs(x0))*(W-m.l-m.r), Yv=v=>m.t+(1-(v-y0)/(y1-y0))*(H-m.t-m.b), cl=v=>Math.min(y1,Math.max(y0,v));
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.aria||''}">`;
+  (o.yt||[]).forEach(v=>{s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Yv(v)}" y2="${Yv(v)}" stroke="${css('--grid')}"/><text x="${m.l-6}" y="${Yv(v)+3.5}" text-anchor="end">${o.yfmt?o.yfmt(v):v}</text>`;});
+  (o.xt||[]).forEach(v=>{s+=`<text x="${X(v)}" y="${H-m.b+15}" text-anchor="middle">${o.xtfmt?o.xtfmt(v):v}</text>`;});
+  s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${H-m.b}" y2="${H-m.b}" stroke="${css('--rule')}"/>`;
+  if(o.xlab) s+=`<text class="axt" x="${(m.l+W-m.r)/2}" y="${H-4}" text-anchor="middle">${o.xlab}</text>`;
+  if(o.ylab) s+=`<text class="axt" transform="translate(11 ${(m.t+H-m.b)/2}) rotate(-90)" text-anchor="middle">${o.ylab}</text>`;
+  (o.extra||[]).forEach(fn=>{s+=fn(X,Yv);});
+  (o.bands||[]).forEach(b=>{const p=b.x.map((x,i)=>`${X(x)},${Yv(cl(b.hi[i]))}`).join(' ')+' '+b.x.map((x,i)=>i).reverse().map(i=>`${X(b.x[i])},${Yv(cl(b.lo[i]))}`).join(' '); s+=`<polygon points="${p}" fill="${b.color}" opacity=".12"/>`;});
+  o.series.forEach(se=>{const pts=se.x.map((x,i)=>`${X(x).toFixed(1)},${Yv(cl(se.y[i])).toFixed(1)}`).join(' ');
+    s+=`<polyline points="${pts}" fill="none" stroke="${se.color}" stroke-width="${se.w||2}" stroke-opacity="${se.op||1}" stroke-linejoin="round" ${se.dash?`stroke-dasharray="${se.dash}"`:''}/>`;
+    if(se.marks) se.x.forEach((x,i)=>{s+=`<circle cx="${X(x)}" cy="${Yv(cl(se.y[i]))}" r="3.5" fill="${se.color}" fill-opacity="${se.op||1}" stroke="${css('--surface')}" stroke-width="1.5"/>`;});});
+  s+=`<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${H-m.b}" stroke="${css('--ink-3')}" stroke-dasharray="3 3" visibility="hidden"/><rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="transparent"/></svg>`;
+  host.innerHTML=s; if(o.nohover) return;
+  const svg=host.querySelector('svg'),xh=svg.querySelector('.xh'),tip=document.createElement('div'); tip.className='tip'; tip.hidden=true; host.appendChild(tip);
+  const ref=o.series[0];
+  svg.addEventListener('pointermove',ev=>{const r=svg.getBoundingClientRect(),px=(ev.clientX-r.left)/r.width*W; let bi=0,bd=1e9; ref.x.forEach((x,i)=>{const d=Math.abs(X(x)-px); if(d<bd){bd=d;bi=i;}});
+    xh.setAttribute('x1',X(ref.x[bi])); xh.setAttribute('x2',X(ref.x[bi])); xh.setAttribute('visibility','visible');
+    tip.innerHTML=`${o.xname} ${o.xfmt(ref.x[bi])}<br>`+o.series.filter(s=>s.x.length===ref.x.length).map(se=>`<span class="sw" style="background:${se.color};opacity:${se.op||1}"></span>${se.name} ${o.vfmt(se.y[bi])}`).join('<br>');
+    tip.hidden=false; tip.style.left=Math.min(Math.max((X(ref.x[bi])/W)*r.width+12,0),r.width-tip.offsetWidth-2)+'px'; tip.style.top='8px';});
+  svg.addEventListener('pointerleave',()=>{tip.hidden=true; xh.setAttribute('visibility','hidden');});
+}
+function barChart(el,groups,series,o){
+  const W=520,H=o.h||260,m={l:46,r:12,t:22,b:40},host=document.getElementById(el),ymax=o.ymax||1;
+  const Yv=v=>m.t+(1-v/ymax)*(H-m.t-m.b), gw=(W-m.l-m.r)/groups.length, bw=Math.min(30,(gw-20)/series.length-2);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.aria}">`;
+  o.yt.forEach(v=>{s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Yv(v)}" y2="${Yv(v)}" stroke="${css('--grid')}"/><text x="${m.l-6}" y="${Yv(v)+3.5}" text-anchor="end">${o.yfmt?o.yfmt(v):v}</text>`;});
+  (o.ref||[]).forEach(r=>{s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Yv(r)}" y2="${Yv(r)}" stroke="${css('--ink-2')}" stroke-dasharray="4 4"/>`;});
+  groups.forEach((g,gi)=>{const cx=m.l+gw*gi+gw/2, act=series.filter(se=>se.v[gi]!=null), x0=cx-(act.length*(bw+2))/2;
+    act.forEach((se,si)=>{const v=se.v[gi],x=x0+si*(bw+2),y=Yv(v);
+      s+=`<path d="M${x},${Yv(0)} V${y+3} q0,-3 3,-3 h${bw-6} q3,0 3,3 V${Yv(0)} Z" fill="${se.color}"><title>${se.name} ${g}: ${o.vfmt(v)}</title></path><text class="lbl" x="${x+bw/2}" y="${y-4}" text-anchor="middle">${o.lfmt(v)}</text>`;});
+    s+=`<text x="${cx}" y="${H-m.b+15}" text-anchor="middle">${g}</text>`;});
+  s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Yv(0)}" y2="${Yv(0)}" stroke="${css('--rule')}"/><text class="axt" x="${(m.l+W-m.r)/2}" y="${H-4}" text-anchor="middle">${o.xlab}</text></svg>`;
+  host.innerHTML=s;
+}
+function scatterLog(el,sets){
+  const W=520,H=300,m={l:46,r:12,t:10,b:38},host=document.getElementById(el),lo=Math.log10(4),hi=Math.log10(300);
+  const X=v=>m.l+(Math.log10(v)-lo)/(hi-lo)*(W-m.l-m.r), Yv=v=>m.t+(1-(Math.log10(v)-lo)/(hi-lo))*(H-m.t-m.b);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="box sizes">`;
+  [5,10,20,50,100,200].forEach(v=>{s+=`<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${H-m.b}" stroke="${css('--grid')}"/><line x1="${m.l}" x2="${W-m.r}" y1="${Yv(v)}" y2="${Yv(v)}" stroke="${css('--grid')}"/><text x="${X(v)}" y="${H-m.b+15}" text-anchor="middle">${v}</text><text x="${m.l-6}" y="${Yv(v)+3.5}" text-anchor="end">${v}</text>`;});
+  s+=`<text class="axt" x="${(m.l+W-m.r)/2}" y="${H-4}" text-anchor="middle">폭 (px, 횡방향)</text><text class="axt" transform="translate(11 ${(m.t+H-m.b)/2}) rotate(-90)" text-anchor="middle">높이 (px, 진행방향)</text>`;
+  sets.forEach(st=>st.w.forEach((w,i)=>{if(w>=4&&st.h[i]>=4) s+=`<circle cx="${X(w).toFixed(1)}" cy="${Yv(st.h[i]).toFixed(1)}" r="2.8" fill="${st.color}" fill-opacity=".6" stroke="${css('--surface')}" stroke-width=".8"/>`;}));
+  host.innerHTML=s+'</svg>';
+}
+function cmChart(el,cm,labels,title){
+  const W=520,H=210,m={l:150,r:20,t:40,b:6},n=cm.length,cw=(W-m.l-m.r)/n,ch=(H-m.t-m.b)/n,host=document.getElementById(el),row=cm.map(r=>r.reduce((a,b)=>a+b,0));
+  const h2=x=>[1,3,5].map(i=>parseInt(x.slice(i,i+2),16)),A=h2(css('--ramp0')),B=h2(css('--ramp3'));
+  const mix=t=>`rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')})`;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="confusion matrix"><text class="axt" x="${m.l}" y="12" style="font-weight:600">${title}</text>`;
+  labels.forEach((l,j)=>{s+=`<text class="axt" x="${m.l+cw*j+cw/2}" y="${m.t-8}" text-anchor="middle">예측 ${l}</text>`;});
+  cm.forEach((r,i)=>{s+=`<text class="axt" x="${m.l-10}" y="${m.t+ch*i+ch/2+4}" text-anchor="end">정답 ${labels[i]}</text>`;
+    r.forEach((v,j)=>{const t=v/Math.max(row[i],1); s+=`<rect x="${m.l+cw*j+1}" y="${m.t+ch*i+1}" width="${cw-2}" height="${ch-2}" rx="3" fill="${mix(Math.pow(t,.7)*.85)}"/><text x="${m.l+cw*j+cw/2}" y="${m.t+ch*i+ch/2+4}" text-anchor="middle" style="fill:${t>.45?css('--ramp0'):css('--ink')};font-size:12px">${v} <tspan style="font-size:10px">(${Math.round(t*100)}%)</tspan></text>`;});});
+  host.innerHTML=s+'</svg>';
+}
+function drawGray(cv,arr){const n=arr.length;cv.width=n;cv.height=n;const c=cv.getContext('2d'),im=c.createImageData(n,n);for(let y=0;y<n;y++)for(let x=0;x<n;x++){const v=arr[y][x],o=(y*n+x)*4;im.data[o]=im.data[o+1]=im.data[o+2]=v;im.data[o+3]=255;}c.putImageData(im,0,0);}
+
+function draw(){
+  const ys=['2015','2017','2021','2010','2018'];
+  barChart('c-year',ys.map(y=>y+(YT.includes(y)?' 학습':' 시험')),[{name:'MILCO',color:css('--s1'),v:ys.map(y=>Y[y].obj_unique.MILCO)},{name:'NOMBO',color:css('--s2'),v:ys.map(y=>Y[y].obj_unique.NOMBO)}],
+    {aria:'objects per year',xlab:'연도',ymax:160,yt:[0,40,80,120,160],vfmt:v=>v+'개',lfmt:v=>v});
+  scatterLog('c-size',[{w:D.sizes.NOMBO.w,h:D.sizes.NOMBO.h,color:css('--s2')},{w:D.sizes.MILCO.w,h:D.sizes.MILCO.h,color:css('--s1')}]);
+  const G=D.sig, u=G.u;
+  lineChart('c-sig',{xr:[-1.5,1.5],yr:[-4,3],yt:[-4,-2,0,2],xt:[-1.5,-1,-0.5,0,0.5,1,1.5],xlab:'상자 폭 단위 (+ = 바깥쪽, 그림자 방향)',ylab:'주변 대비 dB',aria:'signature',
+    bands:[{x:u,lo:G.MILCO.q25,hi:G.MILCO.q75,color:css('--s1')}],
+    extra:[(X,Yv)=>`<line x1="${X(0)}" x2="${X(0)}" y1="${Yv(3)}" y2="${Yv(-4)}" stroke="${css('--rule')}"/><text x="${X(-0.35)}" y="${Yv(2.6)}" text-anchor="middle">하이라이트</text><text x="${X(0.35)}" y="${Yv(-3.5)}" text-anchor="middle">그림자</text>`],
+    series:[{x:u,y:G.MILCO.med,color:css('--s1'),name:'MILCO'},{x:u,y:G.NOMBO.med,color:css('--s2'),name:'NOMBO'},{x:u,y:G.BG.med,color:css('--ink-3'),name:'배경'}],xname:'u',xfmt:v=>v.toFixed(2),vfmt:v=>v.toFixed(1)+' dB'});
+  // FROC
+  const fo=Yo.froc_operational, mf=D.mf.operational;
+  const pts=r=>{const a=r.fa.map((f,i)=>[Math.max(f,0.01),r.rec[i]]); return {x:a.map(p=>p[0]),y:a.map(p=>p[1])};};
+  const a1=pts(fo.raw_obj),a2=pts(fo.raw_milco),a3=pts(mf.raw);
+  lineChart('c-froc',{xr:[0.01,20],xlog:true,yr:[0,1],yt:[0,.25,.5,.75,1],yfmt:v=>v*100+'%',xt:[0.01,0.1,1,10],xtfmt:v=>v,xlab:'화면당 오경보 수 (로그)',ylab:'재현율',aria:'FROC',nohover:true,
+    series:[{...a1,color:css('--s1'),name:'YOLO'},{...a2,color:css('--s1'),op:.5,dash:'5 4',name:'YOLO MILCO'},{...a3,color:css('--ink-3'),name:'MF'}],
+    extra:[(X,Yv)=>`<line x1="${X(1)}" x2="${X(1)}" y1="${Yv(0)}" y2="${Yv(1)}" stroke="${css('--ink-3')}" stroke-dasharray="3 3"/>`]});
+  // patch split bars
+  const gs=['이미지 무작위\n(누수)','장면 단위','연도 분할\n(운용 조건)'];
+  barChart('c-split',['누수 분할','장면 분할','연도 분할'],[
+    {name:'음향 특징',color:css('--ink-3'),v:[P['naive|acoustic'].f1_3,P['scene|acoustic'].f1_3,P['year|acoustic'].f1_3]},
+    {name:'DINOv2 고정',color:css('--s2'),v:[P['naive|dino_lp'].f1_3,P['scene|dino_lp'].f1_3,P['year|dino_lp'].f1_3]},
+    {name:'DINOv2 미세조정',color:css('--s1'),v:[null,null,P['year|dino_ft'].f1_3]}],
+    {aria:'F1 by split',xlab:'평가 분할',ymax:1,yt:[0,.25,.5,.75,1],ref:[0.815],vfmt:v=>v.toFixed(3),lfmt:v=>v.toFixed(2)});
+  cmChart('c-cm1',P['year|acoustic'].cm,['MILCO','NOMBO','배경'],'음향 특징');
+  cmChart('c-cm2',P['year|dino_ft'].cm,['MILCO','NOMBO','배경'],'DINOv2 미세조정');
+  // gallery
+  const gal=document.getElementById('gal'); gal.innerHTML='';
+  [['MILCO','기뢰 유사물체',0],['NOMBO','비기뢰 물체',1],['배경','해저',2]].forEach(([t,d,c])=>{
+    const row=document.createElement('div'); row.className='row'; row.innerHTML=`<div class="lab"><b>${t}</b>${d}</div><div class="cells"></div>`;
+    const cells=row.querySelector('.cells'); D.examples[c].slice(0,10).forEach(a=>{const cv=document.createElement('canvas'); drawGray(cv,a); cells.appendChild(cv);}); gal.appendChild(row);});
+  // frames
+  const fr=document.getElementById('frames'); fr.innerHTML='';
+  D.frames.forEach(F=>{const cv=document.createElement('canvas'); const img=new Image(); img.onload=()=>{cv.width=img.width;cv.height=img.height;const c=cv.getContext('2d');c.drawImage(img,0,0);const S=img.width;
+      c.lineWidth=2; c.strokeStyle=css('--s3'); F.gt.forEach(([x,y,w,h])=>{c.strokeRect((x-w/2)*S-3,(y-h/2)*S-3,w*S+6,h*S+6);});
+      c.strokeStyle=css('--s1'); F.det.forEach(([x,y,w,h,s])=>{c.setLineDash([4,3]);c.strokeRect((x-w/2)*S-6,(y-h/2)*S-6,w*S+12,h*S+12);c.setLineDash([]);c.fillStyle=css('--s1');c.font='11px IBM Plex Mono, monospace';c.fillText(s.toFixed(2),(x+w/2)*S+8,(y)*S+4);});};
+    img.src='data:image/png;base64,'+F.png; fr.appendChild(cv);});
+}
+
+// ---------- text from data
+const fo=Yo.froc_operational, mf=D.mf.operational, vs=Yo.froc_val_scenes, mfv=D.mf.train_years;
+const at=(c,f)=>(c.find(x=>x[0]===f)||[0,0])[1];
+document.getElementById('froc-cap').textContent=`시험 연도 ${fo.n_img}개 장면(표적 ${fo.n_gt}개, MILCO ${fo.n_gt_milco}개)입니다. 화면당 오경보 1건에서 재현율은 YOLO ${pct(at(fo.froc_obj,1))}(MILCO만 ${pct(at(fo.froc_milco,1))}), 정합필터 ${pct(at(mf.froc,1))}입니다. 오경보를 화면당 4건까지 허용하면 YOLO ${pct(at(fo.froc_obj,4))}입니다.`;
+let dh='';
+dh+=`<tr><td>mAP@0.5 (두 부류 평균)</td><td class="num">${Yo.map_operational.map50.toFixed(3)}</td><td class="num">—</td></tr>`;
+dh+=`<tr><td>AP@0.5 MILCO / NOMBO</td><td class="num">${Yo.map_operational.per_class_ap50.map(v=>v.toFixed(3)).join(' / ')}</td><td class="num">—</td></tr>`;
+[1,4].forEach(f=>{dh+=`<tr><td>재현율 @ 화면당 오경보 ${f}건 (모든 표적)</td><td class="num">${pct(at(fo.froc_obj,f))}</td><td class="num">${pct(at(vs.froc_obj,f))}</td></tr>`;});
+dh+=`<tr><td>정합필터 재현율 @ 오경보 1건</td><td class="num">${pct(at(mf.froc,1))}</td><td class="num">${pct(at(mfv.froc,1))} (학습 연도 전체)</td></tr>`;
+dh+=`<tr><td>평가 장면 수 (표적 수)</td><td class="num">${fo.n_img} (${fo.n_gt})</td><td class="num">${vs.n_img} (${vs.n_gt})</td></tr>`;
+document.querySelector('#dtable tbody').innerHTML=dh;
+document.getElementById('frame-cap').textContent=D.frame_cap;
+document.querySelector('#sigtable tbody').innerHTML=[['MILCO','MILCO'],['NOMBO','NOMBO'],['BG','배경']].map(([k,n])=>`<tr><td>${n}</td><td class="num">${D.sig[k].n}</td><td class="num">${pct(D.sig[k].frac_high)}</td><td class="num">${pct(D.sig[k].frac_shadow)}</td></tr>`).join('');
+const names={acoustic:'음향 특징 (B2)',dino_lp:'DINOv2 고정 + 선형',dino_ft:'DINOv2 미세조정'}, splits={naive:'이미지 무작위 (누수)',scene:'장면 단위',year:'연도 (운용)'};
+let ph='';
+['naive','scene','year'].forEach(sp=>['acoustic','dino_lp','dino_ft'].forEach(mo=>{const r=P[sp+'|'+mo]; if(!r) return;
+  ph+=`<tr><td>${names[mo]}</td><td>${splits[sp]}</td><td class="num ${sp==='year'&&mo==='acoustic'?'hi':''}">${r.f1_3.toFixed(3)}</td><td class="num">${r.f1_bin.toFixed(3)}</td>${r.recall.map(v=>`<td class="num">${pct(v)}</td>`).join('')}</tr>`;}));
+ph+=`<tr class="ref"><td>Mine-JEPA (레퍼런스)</td><td>논문 분할 (미공개)</td><td class="num">0.820</td><td class="num">0.935</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`;
+ph+=`<tr class="ref"><td>DINOv3 미세조정 (레퍼런스)</td><td>논문 분할 (미공개)</td><td class="num">0.810</td><td class="num">0.922</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`;
+document.querySelector('#ptable tbody').innerHTML=ph;
+const ft=P['year|dino_ft'], ac=P['year|acoustic'];
+document.getElementById('cm-cap').textContent=`시험 연도 패치(MILCO ${ac.n[0]}, NOMBO ${ac.n[1]}, 배경 ${ac.n[2]}). 미세조정 모델은 MILCO를 ${pct(ft.recall[0])} 찾지만 NOMBO의 ${pct(ft.cm[1][0]/ft.n[1])}와 배경 ${ft.cm[2][0]}개를 MILCO로 부릅니다. 음향 특징 모델은 덜 찾는 대신(${pct(ac.recall[0])}) 오판이 적습니다.`;
+const F=[
+ ['발견 1','데이터 누수가 점수를 부풀린다',`DINOv2 고정 특징의 3분류 F1은 이미지 무작위 분할에서 ${naive.toFixed(3)}, 장면 분할에서 ${scene.toFixed(3)}입니다. 축소 복사본이 학습과 시험에 함께 들어가는 것만으로 ${((naive-scene)*100).toFixed(1)}점이 오릅니다. 레퍼런스 연구의 수치(0.81–0.82)는 공교롭게 누수 분할 수준과 같습니다. 분할 방식이 공개되지 않은 수치와 직접 비교하면 안 되는 이유입니다.`],
+ ['발견 2','처음 보는 연도에서 크게 떨어진다',`같은 모델이 연도 분할에서는 ${year.toFixed(3)}입니다. 장면 분할보다 ${((scene-year)*100).toFixed(1)}점 낮습니다. 해역, 해저 질감, 장비 설정이 바뀌는 실제 운용 조건에서는, 범용 영상 기반 모델의 특징이 그대로 옮겨 가지 않습니다.`],
+ ['발견 3','물리 특징이 운용 조건에서 가장 견고했다',`연도 분할의 3분류 F1은 음향 특징 ${ac.f1_3.toFixed(3)}, DINOv2 미세조정 ${ft.f1_3.toFixed(3)}, 고정 ${year.toFixed(3)} 순입니다. 하이라이트–그림자 단면과 크기라는 작은 물리 특징이 가장 덜 떨어졌습니다(장면 분할 대비 ${((P['scene|acoustic'].f1_3-ac.f1_3)*100).toFixed(1)}점). 챕터 A에서 두 대역 규칙이 무너진 것과 반대 결과로, 특징이 물리에 묶여 있을수록 도메인 이동에 강합니다.`],
+ ['발견 4','탐지기는 놓치지 않는 쪽, 분류기는 가려내는 쪽',`YOLO는 시험 연도에서 화면당 오경보 1건에 ${pct(at(fo.froc_obj,1))}를 찾아, 고전적 정합필터(${pct(at(mf.froc,1))})를 크게 앞섭니다. 미세조정 분류기는 MILCO를 ${pct(ft.recall[0])} 찾지만 NOMBO를 MILCO로 많이 부릅니다. 탐지기로 후보를 넓게 잡고, 물리 특징을 섞은 분류기로 걸러내는 2단 구성이 현실적인 방향입니다.`]
+];
+document.getElementById('findings').innerHTML=F.map(([k,t,p])=>`<div class="note"><span class="k">${k}</span><h3>${t}</h3><p>${p}</p></div>`).join('');
+document.getElementById('now').innerHTML=`<b>현 시점에서 가능한 탐지.</b> 측면주사 영상에서 "해저에 무언가 있다"는 판단은 하이라이트–그림자 물리와 소형 탐지기로 상당 부분 가능합니다. 처음 보는 해역에서도 화면당 오경보 1건에 표적의 ${pct(at(fo.froc_obj,1))}를 찾습니다. 그 물체가 기뢰인지를 가리는 단계는 아직 운용 조건에서 3분류 F1 ${ac.f1_3.toFixed(2)} 수준입니다. 해역별 소량 라벨이나 원시 신호 수준의 정보 없이는 신뢰하기 어렵습니다.`;
+
+draw();
+const mq=matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener&&mq.addEventListener('change',draw);
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+})();
+</script>

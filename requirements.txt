@@ -1,0 +1,8 @@
+numpy
+scipy
+pillow
+scikit-learn
+torch
+torchvision
+ultralytics      # YOLOv8
+transformers     # DINOv2 (facebook/dinov2-small)

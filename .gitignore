@@ -1,0 +1,16 @@
+src/raw/
+src/tiles/
+src/runs/*
+!src/runs/detect/
+src/runs/detect/*
+!src/runs/detect/runs/
+src/runs/detect/runs/*
+!src/runs/detect/runs/yolo_tiles/
+src/runs/detect/runs/yolo_tiles/*
+!src/runs/detect/runs/yolo_tiles/weights/
+src/runs/detect/runs/yolo_tiles/weights/last.pt
+*.npz
+yolov8n.pt
+__pycache__/
+*.pyc
+.DS_Store
