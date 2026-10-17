@@ -28,7 +28,7 @@
 <p align="center"><sub>평가 분할별 3분류 macro F1과 연도 분할 혼동 행렬</sub></p>
 
 <p align="center"><img src="docs/figures/highlight_shadow.png" width="95%" alt="Side-scan frame, across-track highlight-shadow profiles and oriented patches"></p>
-<p align="center"><sub>영상 처리와 하이라이트–그림자 단면</sub></p>
+<p align="center"><sub>영상 처리, 하이라이트–그림자 단면, 단일 특징 ROC (물체 vs 해저 · MILCO vs NOMBO)</sub></p>
 
 <p align="center"><img src="docs/figures/data_diagnosis.png" width="95%" alt="Objects per year, duplicated scene exports and box sizes"></p>
 <p align="center"><sub>데이터 진단: 연도별 객체 수, 축소 복사본, 표적 크기</sub></p>

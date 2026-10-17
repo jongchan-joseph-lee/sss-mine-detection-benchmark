@@ -26,4 +26,5 @@ for name,mask in [('all',np.ones(len(cls),bool)),('test_years',np.isin(yr,['2010
       shadow_obj_vs_bg=auc(o,b,-sh), highlight_obj_vs_bg=auc(o,b,hi), contrast_obj_vs_bg=auc(o,b,hi-sh),
       shadow_milco_vs_nombo=auc(m,n,-sh), contrast_milco_vs_nombo=auc(m,n,hi-sh),
       med_shadow=dict(MILCO=float(np.median(sh[m])),NOMBO=float(np.median(sh[n])),BG=float(np.median(sh[b]))))
-json.dump(out,open('b2_shadow_auc.json','w'),indent=1); print(json.dumps(out,indent=1))
+out['scores']=dict(cls=cls.tolist(),year=[str(y) for y in yr],shadow=np.round(sh,4).tolist(),highlight=np.round(hi,4).tolist())
+json.dump(out,open('b2_shadow_auc.json','w')); print({k:{kk:vv for kk,vv in v.items() if 'auc' in kk or kk.startswith('shadow') or kk.startswith('contrast') or kk.startswith('highlight')} for k,v in out.items() if k!='scores'})
