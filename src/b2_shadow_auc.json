@@ -1,0 +1,34 @@
+{
+ "all": {
+  "n_obj": 430,
+  "n_bg": 800,
+  "n_milco": 285,
+  "n_nombo": 145,
+  "shadow_obj_vs_bg": 0.7134215116279069,
+  "highlight_obj_vs_bg": 0.6491802325581395,
+  "contrast_obj_vs_bg": 0.830438953488372,
+  "shadow_milco_vs_nombo": 0.5353660012099213,
+  "contrast_milco_vs_nombo": 0.5127162734422263,
+  "med_shadow": {
+   "MILCO": -2.041659090042588,
+   "NOMBO": -1.4787423074100998,
+   "BG": -0.20615643291305458
+  }
+ },
+ "test_years": {
+  "n_obj": 114,
+  "n_bg": 368,
+  "n_milco": 74,
+  "n_nombo": 40,
+  "shadow_obj_vs_bg": 0.6573703279938977,
+  "highlight_obj_vs_bg": 0.6580854309687262,
+  "contrast_obj_vs_bg": 0.7754576659038901,
+  "shadow_milco_vs_nombo": 0.5652027027027027,
+  "contrast_milco_vs_nombo": 0.5023648648648649,
+  "med_shadow": {
+   "MILCO": -1.7510411907038685,
+   "NOMBO": -0.47781963992683885,
+   "BG": -0.045566683829004966
+  }
+ }
+}
