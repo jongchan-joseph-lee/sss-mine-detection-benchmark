@@ -10,7 +10,7 @@
 
 | 구분 | 현재 범위 | 확인 근거 |
 |---|---|---|
-| 구현한 기능 | 중복 장면 진단, 밝기 영상 변환 · 축척 통일, 수주 검출 · 횡방향 이득 정규화, 하이라이트–그림자 특징, 정합필터 · YOLOv8n 탐지, 물리 특징 · DINOv2 패치 분류 | [`src/screen.py`](src/screen.py), [`src/b2.py`](src/b2.py), [`src/prep_tiles.py`](src/prep_tiles.py), [`src/b3_patch.py`](src/b3_patch.py) |
+| 구현한 기능 | 중복 장면 진단, 그레이스케일 변환 · 영상 크기 통일, 수주 검출 · 횡방향 이득 정규화, 하이라이트–그림자 특징, 정합필터 · YOLOv8n 탐지, 물리 특징 · DINOv2 패치 분류 | [`src/screen.py`](src/screen.py), [`src/b2.py`](src/b2.py), [`src/prep_tiles.py`](src/prep_tiles.py), [`src/b3_patch.py`](src/b3_patch.py) |
 | 정량 검증: 탐지 | 전체 화면에서 탐지기 단독 FROC · mAP 평가 | [`src/b3_yolo_eval.py`](src/b3_yolo_eval.py), [`src/b3_yolo.json`](src/b3_yolo.json) |
 | 정량 검증: 분류 | 정답 위치 물체 패치 + 무작위 배경 패치의 3분류 macro F1 평가 | [`src/b3_patch.py`](src/b3_patch.py), [`src/b3_patch.json`](src/b3_patch.json) |
 | 설계 제안 | 탐지 후보를 분류기로 재판정하는 2단 구조, 후보 패치 중심의 전송 방식 | 아래 적용 방향. 탐지기–분류기 연계 성능과 전송 효과는 미검증 |
@@ -21,7 +21,7 @@
 | 항목 | 내용 |
 |---|---|
 | 데이터 | Santos et al. 2024, *Data in Brief* 53:110132 (CC BY 4.0). Gavia AUV, Marine Sonic 900/1800 kHz SSS. 영상 1,170장(고유 장면 753개), 클래스 MILCO(기뢰유사물체) · NOMBO(비기뢰 물체) |
-| 영상 처리 (물리 기반) | 중복 장면 검출(고역통과 영상 상관), 색상표 제거 · 축척 통일, 수주(nadir) 검출, 횡방향 이득 정규화, 하이라이트–그림자(highlight–shadow) 특징, 고전적 정합필터 탐지기 |
+| 영상 처리 (물리 기반) | 중복 장면 검출(고역통과 영상 상관), 의사색상 영상의 그레이스케일 변환 · 영상 크기 통일, 수주(nadir) 검출, 횡방향 이득 정규화, 하이라이트–그림자(highlight–shadow) 특징, 고전적 정합필터 탐지기 |
 | 탐지 | YOLOv8n, 320 px 타일 학습 → 1024 px 전체 화면 탐지 (CPU, 25 epoch) |
 | 분류 | 정답 위치 패치의 영상 기반 물리 특징 + 로지스틱 회귀, DINOv2 고정 특징 + 선형 분류기, DINOv2 미세조정 (3분류: MILCO · NOMBO · 해저 배경) |
 | 평가 | 공식 연도 분할(학습 연도 2015 · 2017 · 2021 → 시험 연도 2010 · 2018), 장면 · 이미지 분할 비교. 탐지는 중심 일치 기준 FROC와 mAP@0.5, 패치 분류는 macro F1 |
@@ -38,13 +38,13 @@
 | 객체 재현율, 화면당 오경보 4건 이하 | **78.1%** |
 | 전체 객체 탐지 mAP@0.5 | **0.101** |
 
-근거: [`src/b3_yolo.json`](src/b3_yolo.json)의 `froc_operational.froc_obj`, `map_operational` 및 [평가 코드](src/b3_yolo_eval.py). FROC는 검출 중심과 정답 중심의 거리로 일치 여부를 판정하고, mAP는 박스 IoU를 사용하므로 서로 다른 평가 기준입니다. 결과 파일의 `operational`은 데이터셋의 시험 연도 구분을 뜻합니다.
+근거: [`src/b3_yolo.json`](src/b3_yolo.json)의 `froc_operational.froc_obj`, `map_operational` 및 [평가 코드](src/b3_yolo_eval.py). FROC는 검출 중심과 정답 중심의 거리로 일치 여부를 판정하고, mAP는 박스 IoU를 사용하므로 서로 다른 평가 기준입니다. 결과 파일의 `operational`은 데이터셋의 시험 연도 구분을 뜻합니다. FROC 값은 시험 자료에서 신뢰도 임계값을 순회해 얻은 곡선상 성능이며, 실제 운용 임계값은 별도 검증 자료에서 설정해야 합니다.
 
-고전적 영상 정합필터의 화면당 오경보 1건 기준 재현율은 **4.3%**입니다([`src/b2_results.json`](src/b2_results.json), `mf.operational`). 중심 일치 규칙은 같지만, 정합필터는 정답 115개, YOLO는 1024 px 기준 폭 · 높이 4 px 미만 라벨을 제외한 114개를 사용하므로 이 차이를 고려해 비교해야 합니다.
+고전적 영상 정합필터의 화면당 오경보 1건 기준 재현율은 **4.3%**입니다([`src/b2_results.json`](src/b2_results.json), `mf.operational`). 중심 일치 규칙은 같지만, 정합필터는 정답 115개, YOLO는 1024 px 기준 폭 또는 높이가 4 px 미만인 라벨을 제외한 114개를 사용하므로 이 차이를 고려해 비교해야 합니다.
 
 ### 정답 위치 패치의 독립 분류 평가
 
-[`src/b3_patch.py`](src/b3_patch.py)는 정답 박스의 위치 · 크기로 물체 패치를 추출하고, 장면당 해저 배경 패치 2개를 별도로 뽑습니다. **YOLO 검출 후보를 입력으로 사용하지 않습니다.** 연도 분할 시험 패치는 MILCO 74개 · NOMBO 40개 · 배경 1,156개입니다.
+[`src/b3_patch.py`](src/b3_patch.py)는 정답 박스의 위치 · 크기로 물체 패치를 추출하고, 장면당 해저 배경 패치 2개를 별도로 뽑습니다. **YOLO 검출 후보를 입력으로 사용하지 않습니다.** 물체 · 배경 패치는 112 × 112 px로 변환하며, 연도 분할 시험 패치는 총 1,270개(MILCO 74 · NOMBO 40 · 배경 1,156)입니다.
 
 | 모델 | 이미지 단위 5-fold¹ | 장면 단위 5-fold | 연도 분할 |
 |---|---|---|---|
@@ -54,7 +54,7 @@
 
 값은 MILCO · NOMBO · 해저 배경 **3분류 macro F1**입니다. 근거: [`src/b3_patch.json`](src/b3_patch.json)의 `naive|*`, `scene|*`, `year|*`, `counts`.
 
-¹ 이미지 단위 분할은 축소 복사본을 포함해 같은 장면이 학습 · 시험에 함께 들어갈 수 있는 진단용 조건입니다. DINOv2의 0.814는 이 조건의 결과이며, 문헌 보고치 0.81–0.82와는 분할 규약이 달라 직접적인 성능 동등성을 주장하지 않습니다. 장면 분할과 연도 분할을 비교하면 물리 특징 모델의 하락은 약 0.040, DINOv2 고정 특징 모델은 약 0.146으로, 본 비교에서는 물리 특징 모델이 연도 변화에 따른 하락이 작았습니다.
+¹ 이미지 단위 분할은 축소 복사본을 포함해 같은 장면이 학습 · 시험에 함께 들어갈 수 있는 진단용 조건입니다. DINOv2의 0.814는 이 조건의 결과이며, 문헌 보고치 0.81–0.82와 동일한 분할 규약으로 재평가한 결과가 아니므로 직접적인 성능 동등성을 주장하지 않습니다. 장면 분할과 연도 분할을 비교하면 물리 특징 모델의 하락은 약 0.040, DINOv2 고정 특징 모델은 약 0.146으로, 본 비교에서는 물리 특징 모델이 연도 변화에 따른 하락이 작았습니다.
 
 **위 탐지 재현율과 패치 F1은 별도 실험의 결과입니다.** 탐지 누락, 검출 위치 · 크기 오차, 탐지기가 만드는 오경보 후보를 포함한 2단 연계 재현율 · FROC · 최종 오경보율은 아직 검증하지 않았습니다.
 
@@ -94,14 +94,14 @@ python screen.py            # 중복 장면 · 연도별 통계 → screen.json
 python b2.py                # 수주 검출 · 이득 정규화 · 정합필터 탐지기 FROC → b2_results.json
 python b2_signature.py      # 하이라이트–그림자 단면 → b2_signature.json
 python b2_shadow_auc.py     # 그림자 · 하이라이트 판별력 AUROC → b2_shadow_auc.json
-python prep_tiles.py        # 축척 통일 화면 + 320 px 타일
-python train_yolo.py        # YOLOv8n 타일 학습 (CPU 약 1시간, Apple MPS는 device='mps')
+python prep_tiles.py        # 1024 px 크기 통일 화면 + 320 px 타일
+python train_yolo.py        # YOLOv8n 타일 학습 (CPU, Apple MPS는 device='mps')
 python b3_yolo_eval.py      # 전체 화면 mAP · FROC → b3_yolo.json
-python b3_patch.py 2        # 3분류: 음향 특징 / DINOv2 고정 / DINOv2 미세조정 → b3_patch.json
+python b3_patch.py 2        # 정답 위치 기반 독립 패치 3분류 → b3_patch.json
 python build_report.py      # → milco-report.html
 ```
 
-- 모든 스크립트는 `src/`에서 실행합니다. 결과 JSON과 학습된 탐지기 가중치(`src/runs/detect/runs/yolo_tiles/weights/best.pt`)는 저장소에 포함되어 있어, 학습 없이 평가 · 리포트 단계부터 다시 돌릴 수 있습니다.
+- 모든 스크립트는 `src/`에서 실행합니다. 결과 JSON과 [학습된 탐지기 가중치](src/runs/detect/runs/yolo_tiles/weights/best.pt)는 저장소에 포함되어 있습니다. 탐지 재평가에는 원자료 다운로드와 전처리가 필요하며, 저장된 JSON으로 리포트를 다시 생성할 수 있습니다. `b3_patch.py`는 특징 추출 · 분류 평가 · 미세조정을 함께 실행합니다.
 - 원자료 영상, 타일, 특징 캐시(`*.npz`)는 용량 때문에 포함하지 않았습니다.
 
 ## 한계
