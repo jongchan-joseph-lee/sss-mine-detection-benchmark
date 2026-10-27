@@ -23,6 +23,9 @@
 
 탐지 재현율과 패치 F1은 **서로 다른 실험**입니다. 패치 분류는 정답 위치 패치로 평가했으며, 탐지 후보를 분류기에 연결한 2단 구조의 연계 성능은 후속 검증 대상입니다.
 
+<p align="center"><img src="docs/figures/detection_froc.png" width="95%" alt="FROC curves for YOLOv8n and the classical matched filter on test years, with example detections"></p>
+<p align="center"><sub>YOLOv8n 단독 평가: 시험 연도 578화면 · 정답 객체 114개의 FROC와 탐지 예시(정합필터는 정답 115개)</sub></p>
+
 ## 구현 · 검증 범위
 
 | 구분 | 현재 범위 | 확인 근거 |
@@ -80,8 +83,8 @@
 - **하이라이트–그림자 대비**: 정답 위치 물체 vs 무작위 해저 배경 AUROC **0.830**(전체 연도), **0.775**(시험 연도). 전체 연도에서 그림자만 0.713, 하이라이트만 0.649이며, 대비 특징의 MILCO vs NOMBO AUROC는 0.513입니다. 물체–배경 구분의 단서이지만 MILCO–NOMBO 구분력은 제한적입니다. 주변 해저 대비 JPEG 밝기를 dB 형태로 변환한 영상 특징이며 보정된 음향 산란강도가 아닙니다. 근거: [`src/b2_shadow_auc.json`](src/b2_shadow_auc.json).
 - **중복 장면 진단**: 영상 1,170장에서 중복 417쌍을 식별해 고유 장면 753개로 묶었습니다. 이미지 단위 분할의 성능 상승과 장면 · 연도 분할의 성능 차이를 함께 확인했습니다. 근거: [`src/screen.json`](src/screen.json)의 `years`, `pair_transforms`와 [진단 코드](src/screen.py).
 
-<p align="center"><img src="docs/figures/detection_froc.png" width="95%" alt="FROC curves for YOLOv8n and the classical matched filter on test years, with example detections"></p>
-<p align="center"><sub>YOLOv8n 단독 평가: 시험 연도 578화면 · 정답 객체 114개의 FROC와 탐지 예시(정합필터는 정답 115개)</sub></p>
+<details>
+<summary><b>그림 더 보기</b> — 패치 분류 · 하이라이트–그림자 특징 · 데이터 진단</summary>
 
 <p align="center"><img src="docs/figures/classification_splits.png" width="95%" alt="Three-class macro F1 by evaluation split and year-split confusion matrices"></p>
 <p align="center"><sub>정답 위치 물체 패치 + 무작위 배경 패치의 독립 평가: 분할별 3분류 macro F1과 연도 분할 혼동 행렬</sub></p>
@@ -91,6 +94,8 @@
 
 <p align="center"><img src="docs/figures/data_diagnosis.png" width="95%" alt="Objects per year, duplicated scene exports and box sizes"></p>
 <p align="center"><sub>데이터 진단: 연도별 객체 수, 축소 복사본, 표적 크기</sub></p>
+
+</details>
 
 기존 시각화 리포트는 [`docs/milco-report.html`](docs/milco-report.html)에 있습니다. 실험별 평가 범위와 수치의 해석은 위 설명과 연결한 원본 JSON을 기준으로 확인할 수 있습니다.
 
