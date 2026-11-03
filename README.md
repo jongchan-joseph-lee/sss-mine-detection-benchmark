@@ -136,7 +136,7 @@ python build_report.py      # 결과 열람용 HTML                   → milco-
 ## 관련 저장소
 
 - [marine-mammal-classifier-benchmark](https://github.com/jongchan-joseph-lee/marine-mammal-classifier-benchmark) — Watkins 해양포유류 음향 DB의 레퍼런스 표현 평가 (원고 초안)
-- [sas_signal_processing](https://github.com/jongchan-joseph-lee/sas_signal_processing) — 공개 합성 SAS 원시 신호의 영상 형성 · 검증
+- [SAS_signal_processing](https://github.com/jongchan-joseph-lee/SAS_signal_processing) — 공개 합성 SAS 원시 신호의 영상 형성 · 검증
 
 ## 라이선스
 
