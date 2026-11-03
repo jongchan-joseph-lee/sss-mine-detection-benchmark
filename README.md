@@ -28,14 +28,14 @@
 
 | 단계 | 내용 | 수행 범위 | 근거 |
 |---|---|---|---|
-| 1. 자료 점검 | 고역통과 영상 상관으로 중복 장면 검출, 연도별 물체 수 · 크기 통계 | 수행 | [`src/screen.py`](src/screen.py), [`src/screen.json`](src/screen.json) |
-| 2. 영상 전처리 | 의사색상 → 그레이스케일, 영상 크기 통일(1024 px), 수주(nadir) 검출, 횡방향 이득 정규화 | 수행 | [`src/b2.py`](src/b2.py), [`src/prep_tiles.py`](src/prep_tiles.py) |
-| 3. 물리 특징 | 표적 중심 횡방향 단면의 하이라이트–그림자 대비, 단일 특징 판별력(AUROC) | 수행 | [`src/b2_signature.py`](src/b2_signature.py), [`src/b2_shadow_auc.py`](src/b2_shadow_auc.py) |
-| 4. 탐지 | 고전 정합필터(하이라이트 뒤 그림자) 기준선, YOLOv8n (320 px 타일 학습 → 1024 px 전체 화면 탐지, 25 epoch) | 수행 | [`src/b2.py`](src/b2.py), [`src/train_yolo.py`](src/train_yolo.py), [`src/b3_yolo_eval.py`](src/b3_yolo_eval.py) |
-| 5. 패치 분류 | 정답 위치 패치 3분류(MILCO · NOMBO · 해저 배경): 물리 특징 + 로지스틱 회귀, DINOv2 고정 특징 + 선형 분류기, DINOv2 미세조정 | 수행 (정답 위치 패치 조건) | [`src/b3_patch.py`](src/b3_patch.py) |
-| 6. 평가 규약 | 이미지 · 장면 · 연도 분할 비교, 탐지는 중심 거리 기준 FROC와 mAP@0.5, 분류는 macro F1 | 수행 | 결과 JSON |
-| 7. 탐지 → 분류 연계 | 실제 탐지 후보를 분류기에 넣은 2단 성능 | 미수행 | — |
-| 8. 원시 신호 · 실해역 · 탑재 | 원시 신호 처리, 다른 해역 · 장비, 실시간 처리 | 미수행 | — |
+| 1. 자료 점검 (Data screening) | 고역통과 영상 상관으로 중복 장면 검출, 연도별 물체 수 · 크기 통계 | 수행 | [`src/screen.py`](src/screen.py), [`src/screen.json`](src/screen.json) |
+| 2. 영상 전처리 (Image preprocessing) | 의사색상 → 그레이스케일, 영상 크기 통일(1024 px), 수주(nadir) 검출, 횡방향 이득 정규화 | 수행 | [`src/b2.py`](src/b2.py), [`src/prep_tiles.py`](src/prep_tiles.py) |
+| 3. 물리 특징 (Highlight–shadow features) | 표적 중심 횡방향 단면의 하이라이트–그림자 대비, 단일 특징 판별력(AUROC) | 수행 | [`src/b2_signature.py`](src/b2_signature.py), [`src/b2_shadow_auc.py`](src/b2_shadow_auc.py) |
+| 4. 탐지 (Detection) | 고전 정합필터(하이라이트 뒤 그림자) 기준선, YOLOv8n (320 px 타일 학습 → 1024 px 전체 화면 탐지, 25 epoch) | 수행 | [`src/b2.py`](src/b2.py), [`src/train_yolo.py`](src/train_yolo.py), [`src/b3_yolo_eval.py`](src/b3_yolo_eval.py) |
+| 5. 패치 분류 (Patch classification) | 정답 위치 패치 3분류(MILCO · NOMBO · 해저 배경): 물리 특징 + 로지스틱 회귀, DINOv2 고정 특징 + 선형 분류기, DINOv2 미세조정 | 수행 (정답 위치 패치 조건) | [`src/b3_patch.py`](src/b3_patch.py) |
+| 6. 평가 규약 (Evaluation protocol) | 이미지 · 장면 · 연도 분할 비교, 탐지는 중심 거리 기준 FROC와 mAP@0.5, 분류는 macro F1 | 수행 | 결과 JSON |
+| 7. 탐지 → 분류 연계 (Detection-to-classification cascade) | 실제 탐지 후보를 분류기에 넣은 2단 성능 | 미수행 | — |
+| 8. 원시 신호 · 실해역 · 탑재 (Raw data, sea trials and onboard deployment) | 원시 신호 처리, 다른 해역 · 장비, 실시간 처리 | 미수행 | — |
 
 ### 평가 규약에서 정한 것
 - **분할**: 기본은 자료의 공식 연도 분할입니다. 이미지 단위 분할은 축소 복사본 때문에 같은 장면이 학습 · 시험에 함께 들어갈 수 있어 **진단용 비교 조건**으로만 사용했습니다.
