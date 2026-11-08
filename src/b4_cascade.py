@@ -192,5 +192,23 @@ for name, (X, y) in {"A_random_background": (XA, yA), "B_plus_hard_negatives": (
                  "test_true_detections_lost": float(np.mean(~keep[th == 1])) if (th == 1).any() else None,
                  "class_ba_yolo_on_true_detections": bacc(tcls[m_tp], tg[m_tp]),
                  "class_ba_classifier_on_true_detections": bacc(clf_cls[m_tp], tg[m_tp])}
+# ---- second operating point: detector threshold set by a recall target on val (>= 90 %), then the same cascade
+# (added after the first result showed 53 % test recall at the false-alarm-capped point)
+best90 = max([t for t in cands if op(VAL, t)[0] >= 0.90] or [min(cands)])
+out["detector_threshold_recall90"] = best90
+r_, f_ = op(VAL, best90); out["val_detector_recall90"] = {"recall": r_, "fa_per_frame": f_}
+r_, f_ = op(TEST, best90); out["test_detector_alone_recall90"] = {"recall": r_, "fa_per_frame": f_}
+modelA = fit(XA, yA)
+vh, vc, vF, _, _ = pool(VAL, best90); vp, _ = p_obj(modelA, vF)
+ts = np.sort(vp[vh == 1]); thr_c90 = float(ts[int(np.floor((1 - KEEP_TP) * len(ts)))]) if len(ts) else 0.0
+th, tc, tF, _, _ = pool(TEST, best90); tp_, _ = p_obj(modelA, tF); keep = tp_ >= thr_c90
+out["A_random_background_recall90"] = {"classifier_threshold": thr_c90,
+    "test_recall": float(th[keep].sum() / out["n_test_gt"]), "test_fa_per_frame": float((keep & (th == 0)).sum() / len(TEST)),
+    "test_false_alarms_removed": float(np.mean(~keep[th == 0])), "test_true_detections_lost": float(np.mean(~keep[th == 1]))}
+# ---- FROC of the cascade on test (classifier threshold fixed from val at the recall-target point)
+th, tc, tF, _, _ = pool(TEST, 0.0); tp_, _ = p_obj(modelA, tF); keep = tp_ >= thr_c90
+c_alone, _ = froc(list(zip(tc, th, [0] * len(th))), out["n_test_gt"], len(TEST))
+c_casc, _ = froc(list(zip(tc[keep], th[keep], [0] * int(keep.sum()))), out["n_test_gt"], len(TEST))
+out["test_froc_alone"], out["test_froc_cascade_A"] = c_alone, c_casc
 json.dump(out, open("b4_cascade.json", "w"), indent=2)
 print(json.dumps(out, indent=2))
