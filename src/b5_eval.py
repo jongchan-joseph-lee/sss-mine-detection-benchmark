@@ -129,8 +129,9 @@ def main():
             d = np.array([pd_at(rows_all[key], ix) - pd_at(rows_all[ref], ix) for ix in boot_idx[:1000]])
             res[key]["diff_vs_ref_full"] = dict(mean=(np.array(res[key]["pd"]) - np.array(res[ref]["pd"])).round(4).tolist(),
                                                 ci95=[np.percentile(d[:, k], [2.5, 97.5]).round(4).tolist() for k in range(len(GRID))])
-    json.dump(res, open("b5_eval.json", "w"), indent=1)
-    print("saved b5_eval.json")
+    out = os.environ.get("B5_OUT", "b5_eval.json")
+    json.dump(res, open(out, "w"), indent=1)
+    print("saved", out)
 
 
 if __name__ == "__main__":

@@ -155,6 +155,8 @@ python b5_eval.py ref=runs/detect/runs/yolo_tiles/weights/best.pt aug=weights/yo
 python fig_pipeline.py  # 흐름도 · 모델 구조도
 ```
 
+GPU 비교(RT-DETR-l · YOLOv8s · YOLOv8n × 원본 · 증강)는 NVIDIA GPU가 있는 컴퓨터에서 `python src/run_local.py` 한 줄로 실행하거나, Colab에서 [`colab/compare_detectors.ipynb`](colab/compare_detectors.ipynb)를 실행합니다.
+
 결과 JSON과 학습된 탐지기 가중치가 저장소에 있어 원자료 없이도 수치를 확인할 수 있습니다.
 
 ## Project Structure
