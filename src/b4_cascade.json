@@ -1,0 +1,71 @@
+{
+  "n_val_frames": 26,
+  "n_val_gt": 47,
+  "n_test_frames": 578,
+  "n_test_gt": 114,
+  "detector_threshold": 0.1466,
+  "val_detector": {
+    "recall": 0.8297872340425532,
+    "fa_per_frame": 3.923076923076923
+  },
+  "test_froc_detector_alone": [
+    [
+      0.1,
+      0.23684210526315788
+    ],
+    [
+      0.25,
+      0.40350877192982454
+    ],
+    [
+      0.5,
+      0.4824561403508772
+    ],
+    [
+      1.0,
+      0.5964912280701754
+    ],
+    [
+      2.0,
+      0.7280701754385965
+    ],
+    [
+      4.0,
+      0.7807017543859649
+    ],
+    [
+      8.0,
+      0.7894736842105263
+    ]
+  ],
+  "test_detector_alone": {
+    "recall": 0.5263157894736842,
+    "fa_per_frame": 0.6557093425605537
+  },
+  "A_random_background": {
+    "n_train": 567,
+    "n_train_hard_neg": 0,
+    "classifier_threshold": 0.19500213861465454,
+    "val_true_detections_kept": 0.9743589743589743,
+    "val_false_alarms_removed": 0.029411764705882353,
+    "test_recall": 0.5175438596491229,
+    "test_fa_per_frame": 0.4083044982698962,
+    "test_false_alarms_removed": 0.37730870712401055,
+    "test_true_detections_lost": 0.016666666666666666,
+    "class_ba_yolo_on_true_detections": 0.6222222222222222,
+    "class_ba_classifier_on_true_detections": 0.6777777777777778
+  },
+  "B_plus_hard_negatives": {
+    "n_train": 1809,
+    "n_train_hard_neg": 1242,
+    "classifier_threshold": 0.4271748661994934,
+    "val_true_detections_kept": 0.9743589743589743,
+    "val_false_alarms_removed": 0.29411764705882354,
+    "test_recall": 0.39473684210526316,
+    "test_fa_per_frame": 0.3391003460207612,
+    "test_false_alarms_removed": 0.48284960422163586,
+    "test_true_detections_lost": 0.25,
+    "class_ba_yolo_on_true_detections": 0.6222222222222222,
+    "class_ba_classifier_on_true_detections": 0.6333333333333333
+  }
+}
