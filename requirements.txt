@@ -1,8 +1,10 @@
-numpy
-scipy
-pillow
-scikit-learn
-torch
-torchvision
-ultralytics      # YOLOv8
-transformers     # DINOv2 (facebook/dinov2-small)
+# Versions used for the cascade run (b4_cascade.py, 2026-11). The detector weights were trained earlier
+# with the same major versions; newer releases should also work.
+numpy>=2.2,<3
+scipy>=1.14
+pillow>=11
+scikit-learn>=1.6
+torch>=2.5          # CPU build is enough (tested 2.15.0+cpu)
+torchvision>=0.20
+ultralytics>=8.3    # YOLOv8 (tested 8.4.207)
+transformers>=4.45  # DINOv2 (facebook/dinov2-small), b3_patch.py only
