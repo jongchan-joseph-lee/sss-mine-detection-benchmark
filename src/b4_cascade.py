@@ -210,5 +210,18 @@ th, tc, tF, _, _ = pool(TEST, 0.0); tp_, _ = p_obj(modelA, tF); keep = tp_ >= th
 c_alone, _ = froc(list(zip(tc, th, [0] * len(th))), out["n_test_gt"], len(TEST))
 c_casc, _ = froc(list(zip(tc[keep], th[keep], [0] * int(keep.sum()))), out["n_test_gt"], len(TEST))
 out["test_froc_alone"], out["test_froc_cascade_A"] = c_alone, c_casc
+# ---- Pdc: detected AND object type (MILCO / NOMBO) correct, as a function of false alarms per frame
+th, tc, tF, tcls, tg = pool(TEST, 0.0); tp_, pr = p_obj(modelA, tF); keep = tp_ >= thr_c90
+clf_cls = pr[:, :2].argmax(1)
+
+
+def pdc_curve(score, hit, correct, n_gt, n_img, grid=(0.1, 0.25, 0.5, 1, 2, 4, 8)):
+    o = np.argsort(-score); hit, correct = hit[o], correct[o]
+    fa = np.cumsum(1 - hit) / n_img; pdc = np.cumsum(hit * correct) / n_gt
+    return [(float(f), float(pdc[fa <= f].max()) if (fa <= f).any() else 0.0) for f in grid]
+
+
+out["test_pdc_alone"] = pdc_curve(tc, th, (tcls == tg).astype(int), out["n_test_gt"], len(TEST))
+out["test_pdc_cascade_A"] = pdc_curve(tc[keep], th[keep], (clf_cls[keep] == tg[keep]).astype(int), out["n_test_gt"], len(TEST))
 json.dump(out, open("b4_cascade.json", "w"), indent=2)
 print(json.dumps(out, indent=2))
