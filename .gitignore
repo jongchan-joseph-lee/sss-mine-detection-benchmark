@@ -10,7 +10,8 @@ src/runs/detect/runs/yolo_tiles/*
 !src/runs/detect/runs/yolo_tiles/weights/
 src/runs/detect/runs/yolo_tiles/weights/last.pt
 *.npz
-yolov8n.pt
+yolov8*.pt
+rtdetr-*.pt
 __pycache__/
 *.pyc
 .DS_Store
