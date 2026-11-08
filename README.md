@@ -10,7 +10,7 @@
 - **연계**: YOLO 후보를 물리 특징 분류기로 다시 판정하면 영상당 오경보 1건 기준 Pd가 59.6%에서 70.2%로 올랐습니다.
 - **개선**: 30–50 px 물체에 맞춘 증강으로 영상당 오경보 4건 기준 Pd가 78.1%에서 87.7%(분할 추론)로 올랐습니다.
 
-<p align="center"><img src="docs/figures/highlight_shadow.png" width="95%" alt="Side-scan frame, across-track highlight-shadow profiles and oriented patches"></p>
+<p align="center"><img src="docs/figures/pipeline.png" width="100%" alt="Pipeline: data screening, year split, training with augmentation, sliced inference, optional cascade, test-year evaluation"></p>
 
 ## Results
 
@@ -58,6 +58,17 @@ Pd는 탐지 위치가 맞은 비율, Pdc는 위치와 종류(MILCO / NOMBO)가 
 - 검증 장면에서 Pd 91%가 되도록 정한 탐지 임계값이 시험 연도에서는 Pd 57%였습니다. 연도가 바뀌면 운영점이 이동하므로, 새 조사 자료로 임계값을 다시 맞추는 절차가 필요합니다(증강 탐지기에서는 84%, 아래 참고).
 - YOLO 오경보를 배경으로 추가 학습한 재판정은 맞게 찾은 물체의 25%를 잃어 채택하지 않았습니다.
 - 결과 수치: [`src/b4_cascade.json`](src/b4_cascade.json)
+
+<details>
+<summary>모델 구조 · 하이라이트–그림자 특징</summary>
+
+<p align="center"><img src="docs/figures/architecture.png" width="95%" alt="YOLOv8n backbone, FPN-PAN neck and detection heads; physical-feature re-check classifier"></p>
+<p align="center"><sub>(a) YOLOv8n 탐지기 (층별 채널 · 해상도, 파라미터 수는 학습된 가중치 기준) · (b) 재판정 분류기</sub></p>
+
+<p align="center"><img src="docs/figures/highlight_shadow.png" width="95%" alt="Side-scan frame, across-track highlight-shadow profiles and oriented patches"></p>
+<p align="center"><sub>측면주사 영상, 횡방향 하이라이트–그림자 프로파일, nadir 기준으로 정렬한 패치</sub></p>
+
+</details>
 
 <details>
 <summary>면적당 오경보 예시 (가정 조건)</summary>
@@ -141,6 +152,7 @@ python b3_patch.py 2    # 패치 3분류
 python b4_cascade.py    # 탐지 → 분류 연계
 python prep_aug.py && python train_exp.py --data tiles/milco_tiles_aug.yaml --epochs 40 --name n_aug40   # 증강 학습
 python b5_eval.py ref=runs/detect/runs/yolo_tiles/weights/best.pt aug=weights/yolov8n_aug40.pt          # 시험 연도 평가
+python fig_pipeline.py  # 흐름도 · 모델 구조도
 ```
 
 결과 JSON과 학습된 탐지기 가중치가 저장소에 있어 원자료 없이도 수치를 확인할 수 있습니다.
