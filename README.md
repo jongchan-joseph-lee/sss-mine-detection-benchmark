@@ -63,7 +63,7 @@ Pd는 탐지 위치가 맞은 비율, Pdc는 위치와 종류(MILCO / NOMBO)가 
 <summary>모델 구조 · 하이라이트–그림자 특징</summary>
 
 <p align="center"><img src="docs/figures/architecture.png" width="95%" alt="YOLOv8n backbone, FPN-PAN neck and detection heads; physical-feature re-check classifier"></p>
-<p align="center"><sub>(a) YOLOv8n 탐지기 (층별 채널 · 해상도, 파라미터 수는 학습된 가중치 기준) · (b) 재판정 분류기</sub></p>
+<p align="center"><sub>(a) YOLOv8n 탐지기 · (b) 하이라이트–그림자 재판정 분류기</sub></p>
 
 <p align="center"><img src="docs/figures/highlight_shadow.png" width="95%" alt="Side-scan frame, across-track highlight-shadow profiles and oriented patches"></p>
 <p align="center"><sub>측면주사 영상, 횡방향 하이라이트–그림자 프로파일, nadir 기준으로 정렬한 패치</sub></p>
