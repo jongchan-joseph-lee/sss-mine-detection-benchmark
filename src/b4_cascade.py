@@ -59,7 +59,8 @@ def labels(r):
     return [[c, x, y, w, h] for c, x, y, w, h in r["labels"] if w * 1024 >= 4 and h * 1024 >= 4]
 
 
-m = YOLO("runs/detect/runs/yolo_tiles/weights/best.pt")
+# detector and output can be swapped, e.g. B4_WEIGHTS=runs/detect/runs/exp/n_aug40/weights/last.pt B4_OUT=b5_cascade_aug.json
+m = YOLO(os.environ.get("B4_WEIGHTS", "runs/detect/runs/yolo_tiles/weights/best.pt"))
 
 
 def detect(r):
@@ -223,5 +224,6 @@ def pdc_curve(score, hit, correct, n_gt, n_img, grid=(0.1, 0.25, 0.5, 1, 2, 4, 8
 
 out["test_pdc_alone"] = pdc_curve(tc, th, (tcls == tg).astype(int), out["n_test_gt"], len(TEST))
 out["test_pdc_cascade_A"] = pdc_curve(tc[keep], th[keep], (clf_cls[keep] == tg[keep]).astype(int), out["n_test_gt"], len(TEST))
-json.dump(out, open("b4_cascade.json", "w"), indent=2)
+out["detector_weights"] = os.environ.get("B4_WEIGHTS", "runs/detect/runs/yolo_tiles/weights/best.pt")
+json.dump(out, open(os.environ.get("B4_OUT", "b4_cascade.json"), "w"), indent=2)
 print(json.dumps(out, indent=2))
