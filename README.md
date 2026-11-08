@@ -8,8 +8,9 @@
 - **방법**: 중복 장면을 점검한 뒤 공식 연도 분할(학습 2015 · 2017 · 2021 → 시험 2010 · 2018)로 평가했습니다. 탐지는 고전 정합필터와 YOLOv8n, 분류는 하이라이트–그림자 물리 특징과 DINOv2를 비교했습니다.
 - **결과**: 처음 보는 연도에서 YOLOv8n의 Pd는 78.1%(영상당 오경보 4건), 정합필터는 4.3%(1건)였습니다. 연도가 바뀔 때 분류 성능 하락은 물리 특징(0.04)이 DINOv2(0.15)보다 작았습니다.
 - **연계**: YOLO 후보를 물리 특징 분류기로 다시 판정하면 영상당 오경보 1건 기준 Pd가 59.6%에서 70.2%로 올랐습니다.
+- **개선**: 30–50 px 물체에 맞춘 증강으로 영상당 오경보 4건 기준 Pd가 78.1%에서 87.7%(분할 추론)로 올랐습니다.
 
-<p align="center"><img src="docs/figures/highlight_shadow.png" width="95%" alt="Side-scan frame, across-track highlight-shadow profiles and oriented patches"></p>
+<p align="center"><img src="docs/figures/pipeline.png" width="100%" alt="Pipeline: data screening, year split, training with augmentation, sliced inference, optional cascade, test-year evaluation"></p>
 
 ## Results
 
@@ -54,9 +55,20 @@ Pd는 탐지 위치가 맞은 비율, Pdc는 위치와 종류(MILCO / NOMBO)가 
 
 - 영상당 오경보 1건 이하에서 재판정이 Pd를 5–11%p 올렸습니다. 재판정이 맞는 후보 일부도 버리므로 최대 Pd는 78.9%에서 74.6%로 낮아집니다.
 - 탐지기 단독 Pd의 상한이 79%입니다. 물체의 약 21%는 후보에 오르지 않습니다.
-- 검증 장면에서 Pd 91%가 되도록 정한 탐지 임계값이 시험 연도에서는 Pd 57%였습니다. 연도가 바뀌면 운영점이 이동하므로, 새 조사 자료로 임계값을 다시 맞추는 절차가 필요합니다.
+- 검증 장면에서 Pd 91%가 되도록 정한 탐지 임계값이 시험 연도에서는 Pd 57%였습니다. 연도가 바뀌면 운영점이 이동하므로, 새 조사 자료로 임계값을 다시 맞추는 절차가 필요합니다(증강 탐지기에서는 84%, 아래 참고).
 - YOLO 오경보를 배경으로 추가 학습한 재판정은 맞게 찾은 물체의 25%를 잃어 채택하지 않았습니다.
 - 결과 수치: [`src/b4_cascade.json`](src/b4_cascade.json)
+
+<details>
+<summary>모델 구조 · 하이라이트–그림자 특징</summary>
+
+<p align="center"><img src="docs/figures/architecture.png" width="95%" alt="YOLOv8n backbone, FPN-PAN neck and detection heads; physical-feature re-check classifier"></p>
+<p align="center"><sub>(a) YOLOv8n 탐지기 (층별 채널 · 해상도, 파라미터 수는 학습된 가중치 기준) · (b) 재판정 분류기</sub></p>
+
+<p align="center"><img src="docs/figures/highlight_shadow.png" width="95%" alt="Side-scan frame, across-track highlight-shadow profiles and oriented patches"></p>
+<p align="center"><sub>측면주사 영상, 횡방향 하이라이트–그림자 프로파일, nadir 기준으로 정렬한 패치</sub></p>
+
+</details>
 
 <details>
 <summary>면적당 오경보 예시 (가정 조건)</summary>
@@ -84,6 +96,36 @@ Pd는 탐지 위치가 맞은 비율, Pdc는 위치와 종류(MILCO / NOMBO)가 
 
 </details>
 
+## 개선 실험: 크기 맞춤 증강
+
+시험 연도에서 놓친 물체는 30–50 px(1024 px 기준)에 몰려 있었고(Pd 59%), 학습 물체는 큰 물체가 많은 2015년 장면이 대부분이었습니다. 학습 장면만으로 증강 타일 1,081장을 만들어 기존 타일에 더해 학습했습니다([`src/prep_aug.py`](src/prep_aug.py)).
+
+- 축소(scale-down): 물체가 26–50 px가 되도록 영상을 줄이고, 연도별 반복 횟수로 균형을 맞춤
+- 붙여넣기(copy-paste): 물체와 그림자를 함께 잘라 다른 학습 장면의 같은 쪽(nadir 기준)에 합성
+- 스페클, 감마, 블러, JPEG 재압축
+
+| 시험 연도 Pd @ 영상당 오경보 | 0.5 | 1 | 4 | 8 | 30–50 px @ 4 |
+|---|---|---|---|---|---|
+| YOLOv8n (기존, 25 epoch) | 48.2% | 59.6% | 78.1% | 78.9% | 58.8% |
+| 원본 타일, 40 epoch | 57.9% | 60.5% | 71.9% | 71.9% | 58.8% |
+| 증강 타일, 40 epoch | 46.5% | 60.5% | 84.2% | 91.2% | 79.4% |
+| 증강 타일 + 분할 추론 | 50.0% | 60.5% | 87.7% | 93.0% | 85.3% |
+
+- 같은 epoch의 원본 타일 대비 Pd가 영상당 오경보 4건에서 +12%p(95% CI 3–22%p), 8건에서 +19%p(11–28%p) 높았습니다. 오경보 0.5건 이하에서는 약 11%p 낮아졌습니다.
+- 검증 장면에서 Pd 91%로 정한 임계값이 시험 연도에서 Pd 84%(기존 57%)였습니다. 연도가 바뀔 때 운영점 이동이 줄었습니다.
+- 증강 탐지기에는 재판정이 효과가 없었습니다(오경보 13% 제거, 맞는 탐지 5% 손실).
+- 증강 크기 범위는 학습 연도(2017 · 2021) 분포로 정했지만, 이 방향은 시험 연도 진단을 보고 잡았습니다.
+- 검증 장면(26장)이 작아 epoch 선택이 불안정하므로 마지막 epoch 가중치로 평가했습니다.
+- 결과 수치: [`src/b5_eval.json`](src/b5_eval.json), [`src/b5_cascade_aug.json`](src/b5_cascade_aug.json) · 가중치: [`src/weights/yolov8n_aug40.pt`](src/weights/yolov8n_aug40.pt) · YOLOv8s · RT-DETR 비교(GPU): [`colab/compare_detectors.ipynb`](colab/compare_detectors.ipynb)
+
+<details>
+<summary>시험 연도 FROC · 크기별 Pd</summary>
+
+<p align="center"><img src="docs/figures/augmentation_froc.png" width="95%" alt="Test-year FROC and recall by object size for original and augmented training"></p>
+<p align="center"><sub>원본 · 증강 학습의 시험 연도 FROC와 물체 크기별 Pd (영상당 오경보 4건)</sub></p>
+
+</details>
+
 ## Dataset
 
 - Santos et al. 2024, *Data in Brief* (CC BY 4.0) — Gavia AUV · Marine Sonic 900/1800 kHz, JPEG 1,170장(고유 장면 753개), MILCO · NOMBO 라벨
@@ -108,6 +150,9 @@ python b2.py            # 전처리 · 정합필터 탐지
 python prep_tiles.py && python train_yolo.py && python b3_yolo_eval.py   # YOLOv8n 학습 · 평가
 python b3_patch.py 2    # 패치 3분류
 python b4_cascade.py    # 탐지 → 분류 연계
+python prep_aug.py && python train_exp.py --data tiles/milco_tiles_aug.yaml --epochs 40 --name n_aug40   # 증강 학습
+python b5_eval.py ref=runs/detect/runs/yolo_tiles/weights/best.pt aug=weights/yolov8n_aug40.pt          # 시험 연도 평가
+python fig_pipeline.py  # 흐름도 · 모델 구조도
 ```
 
 결과 JSON과 학습된 탐지기 가중치가 저장소에 있어 원자료 없이도 수치를 확인할 수 있습니다.
@@ -118,10 +163,12 @@ python b4_cascade.py    # 탐지 → 분류 연계
 |---|---|
 | `src` | 점검 · 전처리 · 탐지 · 분류 스크립트, 결과 JSON, YOLO 가중치 |
 | `docs` | 그림, 결과 리포트(HTML) |
+| `colab` | GPU 비교 실험 노트북 (YOLOv8n · YOLOv8s · RT-DETR × 원본 · 증강) |
 
 ## Limitations
 
-- CPU로 학습한 소형 모델(YOLOv8n, 25 epoch)이며, 입력은 원시 신호가 아닌 JPEG 영상입니다.
+- CPU로 학습한 소형 모델(YOLOv8n, 25 · 40 epoch)이며, 입력은 원시 신호가 아닌 JPEG 영상입니다.
+- 검증 장면이 26장으로 작아 epoch 선택이 불안정합니다.
 - 패치 분류 표는 정답 위치 패치 조건의 결과입니다. 연계 평가의 임계값은 검증 장면 26장으로 정해 표본이 작습니다.
 - 공개 자료에 거리 설정과 픽셀 크기가 없어 오경보를 면적당으로 환산하지 못했습니다.
 - 한 자료(한 장비 · 해역 계열)의 결과입니다.
