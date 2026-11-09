@@ -8,7 +8,7 @@
 - **방법**: 중복 장면을 점검한 뒤 공식 연도 분할(학습 2015 · 2017 · 2021 → 시험 2010 · 2018)로 평가했습니다. 탐지는 고전 정합필터와 YOLOv8n, 분류는 하이라이트–그림자 물리 특징과 DINOv2를 비교했습니다.
 - **결과**: 처음 보는 연도에서 YOLOv8n의 Pd는 78.1%(영상당 오경보 4건), 정합필터는 4.3%(1건)였습니다. 연도가 바뀔 때 분류 성능 하락은 물리 특징(0.04)이 DINOv2(0.15)보다 작았습니다.
 - **연계**: YOLO 후보를 물리 특징 분류기로 다시 판정하면 영상당 오경보 1건 기준 Pd가 59.6%에서 70.2%로 올랐습니다.
-- **개선**: 30–50 px 물체에 맞춘 증강으로 영상당 오경보 4건 기준 Pd가 78.1%에서 87.7%(분할 추론)로 올랐습니다.
+- **개선**: 30–50 px 물체에 맞춘 증강으로 영상당 오경보 8건 기준 Pd가 13%p 올랐습니다(YOLOv8n · YOLOv8s, 같은 조건 비교). 모델을 키워도(YOLOv8s · RT-DETR-l) Pd는 같고 CPU 추론 시간만 2.5–14배 늘었습니다.
 
 <p align="center"><img src="docs/figures/pipeline.png" width="100%" alt="Pipeline: data screening, year split, training with augmentation, sliced inference, optional cascade, test-year evaluation"></p>
 
@@ -103,20 +103,41 @@ Pd는 탐지 위치가 맞은 비율, Pdc는 위치와 종류(MILCO / NOMBO)가 
 - 축소(scale-down): 물체가 26–50 px가 되도록 영상을 줄이고, 연도별 반복 횟수로 균형을 맞춤
 - 붙여넣기(copy-paste): 물체와 그림자를 함께 잘라 다른 학습 장면의 같은 쪽(nadir 기준)에 합성
 - 스페클, 감마, 블러, JPEG 재압축
+- 뒤집기 · 밝기 · 크기 ±50% · 모자이크 등 기본 증강(Ultralytics)은 비교하는 모든 학습에 공통으로 적용
 
-| 시험 연도 Pd @ 영상당 오경보 | 0.5 | 1 | 4 | 8 | 30–50 px @ 4 |
+<p align="center"><img src="docs/figures/augmentation_examples.png" width="100%" alt="Augmentation examples: original object, scale-down, shadow-aware copy-paste onto another year, photometric variants"></p>
+<p align="center"><sub>(a) 원본 · (b) 축소 · (c) 다른 연도 해저면에 그림자째 합성 · (d) 광도 증강 (물체 주변 160 px 확대)</sub></p>
+
+| 시험 연도 Pd @ 영상당 오경보 (YOLOv8n, CPU) | 0.5 | 1 | 4 | 8 | 30–50 px @ 4 |
 |---|---|---|---|---|---|
-| YOLOv8n (기존, 25 epoch) | 48.2% | 59.6% | 78.1% | 78.9% | 58.8% |
-| 원본 타일, 40 epoch | 57.9% | 60.5% | 71.9% | 71.9% | 58.8% |
-| 증강 타일, 40 epoch | 46.5% | 60.5% | 84.2% | 91.2% | 79.4% |
-| 증강 타일 + 분할 추론 | 50.0% | 60.5% | 87.7% | 93.0% | 85.3% |
+| 기존 (25 epoch) | 48.2% | 59.6% | 78.1% | 78.9% | 58.8% |
+| 기본 증강만, 40 epoch | 57.9% | 60.5% | 71.9% | 71.9% | 58.8% |
+| + 크기 맞춤 증강, 40 epoch | 46.5% | 60.5% | 84.2% | 91.2% | 79.4% |
+| + 크기 맞춤 증강 + 분할 추론 | 50.0% | 60.5% | 87.7% | 93.0% | 85.3% |
 
-- 같은 epoch의 원본 타일 대비 Pd가 영상당 오경보 4건에서 +12%p(95% CI 3–22%p), 8건에서 +19%p(11–28%p) 높았습니다. 오경보 0.5건 이하에서는 약 11%p 낮아졌습니다.
+- 같은 epoch의 기본 증강만 대비 Pd가 영상당 오경보 4건에서 +12%p(95% CI 3–22%p), 8건에서 +19%p(11–28%p) 높았습니다. 오경보 0.5건 이하에서는 약 11%p 낮아졌습니다.
+- 같은 설정을 GPU에서 60 epoch로 다시 학습하면 분할 추론 Pd는 78.9%(4건) · 86.8%(8건)였습니다. 실행 간 차이가 약 9%p라 87.7%는 높게 나온 쪽입니다.
 - 검증 장면에서 Pd 91%로 정한 임계값이 시험 연도에서 Pd 84%(기존 57%)였습니다. 연도가 바뀔 때 운영점 이동이 줄었습니다.
 - 증강 탐지기에는 재판정이 효과가 없었습니다(오경보 13% 제거, 맞는 탐지 5% 손실).
 - 증강 크기 범위는 학습 연도(2017 · 2021) 분포로 정했지만, 이 방향은 시험 연도 진단을 보고 잡았습니다.
 - 검증 장면(26장)이 작아 epoch 선택이 불안정하므로 마지막 epoch 가중치로 평가했습니다.
 - 결과 수치: [`src/b5_eval.json`](src/b5_eval.json), [`src/b5_cascade_aug.json`](src/b5_cascade_aug.json) · 가중치: [`src/weights/yolov8n_aug40.pt`](src/weights/yolov8n_aug40.pt) · YOLOv8s · RT-DETR 비교(GPU): [`colab/compare_detectors.ipynb`](colab/compare_detectors.ipynb)
+
+### 구조 비교 (GPU)
+
+같은 타일 · 설정 · 60 epoch로 YOLOv8n · YOLOv8s · RT-DETR-l을 기본 증강만 / + 크기 맞춤 증강으로 학습하고, 영상 1장당 추론 시간을 쟀습니다(RTX 3070 Ti PC).
+
+<p align="center"><img src="docs/figures/detector_tradeoff.png" width="100%" alt="Recall at 8 false alarms per frame versus per-frame latency on CPU and GPU"></p>
+
+| + 크기 맞춤 증강, 분할 추론 | 파라미터 | Pd @ 4 | Pd @ 8 | CPU (ms) | GPU (ms) |
+|---|---|---|---|---|---|
+| YOLOv8n | 3.1 M | 78.9% | 86.8% | 132 | 20 |
+| YOLOv8s | 11.1 M | 78.9% | 85.1% | 325 | 29 |
+| RT-DETR-l | 32.8 M | 73.7% | 78.9% | 1,816 | 97 |
+
+- 크기 맞춤 증강의 효과(오경보 8건): YOLOv8n +13%p [5, 22], YOLOv8s +13%p [7, 20], RT-DETR-l +6%p (0 포함)
+- RT-DETR-l은 320 px 타일로 학습해 1024 px 전체 화면 추론에서 Pd가 0.30 이하로 떨어집니다(분할 추론에서 회복).
+- 실행 환경 · 학습 시간 · 학습 기록 · 지연 시간 원자료: [`src/gpu_runs/`](src/gpu_runs/)
 
 <details>
 <summary>시험 연도 FROC · 크기별 Pd</summary>

@@ -37,7 +37,7 @@ for ax, dev, title in [(axes[0], "cpu", "CPU (Intel, 8 threads)"), (axes[1], "cu
     ax.grid(alpha=.3, which="both")
 axes[0].set_ylabel(f"Recall (Pd) @ {FA} false alarms / frame")
 axes[0].set_ylim(0.55, 1.0)
-h = [plt.Line2D([], [], marker="o", ls="", ms=9, mfc="white", mec=GREY, mew=2, label="original tiles"),
+h = [plt.Line2D([], [], marker="o", ls="", ms=9, mfc="white", mec=GREY, mew=2, label="default augmentation only"),
      plt.Line2D([], [], marker="o", ls="", ms=9, mfc=AMBER, mec=AMBER, mew=2, label="+ size-matched augmentation")]
 axes[0].legend(handles=h, frameon=False, loc="lower left", fontsize=10.5)
 for a_, t in zip(axes, "ab"):
