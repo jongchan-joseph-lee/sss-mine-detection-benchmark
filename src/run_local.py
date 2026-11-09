@@ -39,7 +39,8 @@ def run(args, env=ENV):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=60)
-    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--workers", type=int, default=0 if os.name == "nt" else 4,
+                    help="DataLoader workers (0 on Windows: worker processes can exit unexpectedly)")
     ap.add_argument("--batch", type=int, default=16)
     a = ap.parse_args()
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
