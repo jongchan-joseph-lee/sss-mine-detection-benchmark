@@ -1,0 +1,156 @@
+{
+ "machine": {
+  "os": "Windows-11-10.0.26200-SP0",
+  "cpu": "Intel64 Family 6 Model 167 Stepping 1, GenuineIntel",
+  "cpu_threads": 8,
+  "gpu": "NVIDIA GeForce RTX 3070 Ti",
+  "python": "3.15.2",
+  "torch": "2.14.1+cu126"
+ },
+ "frames": {
+  "cuda": 100,
+  "cpu": 30
+ },
+ "runs": {
+  "ref_n25_cpu": {
+   "weights": "runs/detect/runs/yolo_tiles/weights/best.pt",
+   "parameters": 3138246,
+   "cuda_full_ms": {
+    "median": 10.29,
+    "p90": 11.68
+   },
+   "cuda_sliced_ms": {
+    "median": 18.05,
+    "p90": 21.46
+   },
+   "cpu_full_ms": {
+    "median": 73.16,
+    "p90": 86.54
+   },
+   "cpu_sliced_ms": {
+    "median": 119.59,
+    "p90": 146.72
+   }
+  },
+  "n_base60": {
+   "weights": "runs_gpu\\n_base60\\weights\\last.pt",
+   "parameters": 3138246,
+   "cuda_full_ms": {
+    "median": 11.4,
+    "p90": 13.19
+   },
+   "cuda_sliced_ms": {
+    "median": 21.4,
+    "p90": 27.48
+   },
+   "cpu_full_ms": {
+    "median": 86.42,
+    "p90": 94.25
+   },
+   "cpu_sliced_ms": {
+    "median": 131.25,
+    "p90": 135.41
+   }
+  },
+  "n_aug60": {
+   "weights": "runs_gpu\\n_aug60\\weights\\last.pt",
+   "parameters": 3138246,
+   "cuda_full_ms": {
+    "median": 9.6,
+    "p90": 11.3
+   },
+   "cuda_sliced_ms": {
+    "median": 19.92,
+    "p90": 25.34
+   },
+   "cpu_full_ms": {
+    "median": 76.51,
+    "p90": 80.84
+   },
+   "cpu_sliced_ms": {
+    "median": 131.9,
+    "p90": 144.35
+   }
+  },
+  "s_base60": {
+   "weights": "runs_gpu\\s_base60\\weights\\last.pt",
+   "parameters": 11136374,
+   "cuda_full_ms": {
+    "median": 13.28,
+    "p90": 14.03
+   },
+   "cuda_sliced_ms": {
+    "median": 28.21,
+    "p90": 32.63
+   },
+   "cpu_full_ms": {
+    "median": 211.6,
+    "p90": 227.06
+   },
+   "cpu_sliced_ms": {
+    "median": 319.66,
+    "p90": 328.72
+   }
+  },
+  "s_aug60": {
+   "weights": "runs_gpu\\s_aug60\\weights\\last.pt",
+   "parameters": 11136374,
+   "cuda_full_ms": {
+    "median": 13.33,
+    "p90": 14.0
+   },
+   "cuda_sliced_ms": {
+    "median": 28.69,
+    "p90": 33.37
+   },
+   "cpu_full_ms": {
+    "median": 212.77,
+    "p90": 218.52
+   },
+   "cpu_sliced_ms": {
+    "median": 324.56,
+    "p90": 331.02
+   }
+  },
+  "rtdetr_base60": {
+   "weights": "runs_gpu\\rtdetr_base60\\weights\\last.pt",
+   "parameters": 32810186,
+   "cuda_full_ms": {
+    "median": 41.09,
+    "p90": 44.18
+   },
+   "cuda_sliced_ms": {
+    "median": 95.78,
+    "p90": 99.05
+   },
+   "cpu_full_ms": {
+    "median": 760.64,
+    "p90": 776.06
+   },
+   "cpu_sliced_ms": {
+    "median": 1728.71,
+    "p90": 1818.24
+   }
+  },
+  "rtdetr_aug60": {
+   "weights": "runs_gpu\\rtdetr_aug60\\weights\\last.pt",
+   "parameters": 32810186,
+   "cuda_full_ms": {
+    "median": 45.51,
+    "p90": 48.19
+   },
+   "cuda_sliced_ms": {
+    "median": 96.51,
+    "p90": 107.15
+   },
+   "cpu_full_ms": {
+    "median": 800.58,
+    "p90": 827.47
+   },
+   "cpu_sliced_ms": {
+    "median": 1816.38,
+    "p90": 1872.26
+   }
+  }
+ }
+}
