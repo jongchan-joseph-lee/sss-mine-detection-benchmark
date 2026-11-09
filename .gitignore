@@ -17,3 +17,5 @@ __pycache__/
 .DS_Store
 src/runs_gpu/
 src/results_gpu.zip
+src/b5_dets/*60_full.json
+src/b5_dets/*60_sliced.json
