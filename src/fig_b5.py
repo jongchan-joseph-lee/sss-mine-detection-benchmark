@@ -10,9 +10,9 @@ exec(open("b5_eval.py").read().replace('if __name__ == "__main__":\n    main()',
 R = json.load(open("b5_eval.json"))
 FA = np.logspace(np.log10(0.1), np.log10(10), 60)
 RUNS = [("ref_full", "YOLOv8n 25 ep (reference)", "#9a9a9a", "-"),
-        ("n_base40last_full", "40 ep, original tiles", "#4a4a4a", "--"),
-        ("n_aug40last_full", "40 ep, + augmented tiles", "#d08a1e", "-"),
-        ("n_aug40last_sliced", "40 ep, + augmented, sliced inference", "#8a4f00", ":")]
+        ("n_base40last_full", "40 ep, default augmentation only", "#4a4a4a", "--"),
+        ("n_aug40last_full", "40 ep, + size-matched augmentation", "#d08a1e", "-"),
+        ("n_aug40last_sliced", "40 ep, + size-matched aug., sliced", "#8a4f00", ":")]
 plt.rcParams.update({"font.family": "serif", "font.serif": ["Liberation Serif", "DejaVu Serif"], "font.size": 11, "axes.spines.top": False, "axes.spines.right": False})
 fig, ax = plt.subplots(1, 2, figsize=(11, 4.2), gridspec_kw={"width_ratios": [1.5, 1]})
 for key, lab, col, ls in RUNS:
