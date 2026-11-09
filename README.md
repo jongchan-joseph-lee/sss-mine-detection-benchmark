@@ -1,46 +1,38 @@
-# Side-Scan Sonar Mine Detection Benchmark
+# AI-based Side-Scan Sonar Mine Detection Benchmark
 
-공개 AUV 측면주사 소나(Side-Scan Sonar, SSS) 영상으로 기뢰유사물체(mine-like object) 탐지기를 구축하고, 학습에 쓰지 않은 촬영 연도에서 성능을 검증한 프로젝트
+공개 AUV 측면주사 소나(Side-Scan Sonar, SSS) 영상에서 AI 탐지기로 기뢰유사물체(mine-like object)를 찾고, 학습에 쓰지 않은 촬영 연도로 성능을 비교한 벤치마크
 
-<p align="center"><img src="docs/figures/pipeline.png" width="100%" alt="Pipeline: year split, training with augmentation, sliced inference, optional re-check, test-year evaluation"></p>
+<p align="center"><img src="docs/figures/pipeline.png" width="100%" alt="Pipeline: year split, training with augmentation, sliced inference, optional re-check, evaluation"></p>
 
-## 1. 연구 배경
+## Background
 
-- **고전 연구 (물리 모델 기반)**
-  - SSS 기뢰 탐지는 표적 반사(하이라이트)와 후방 음향 그림자 쌍을 검출하는 방식으로 발전함
-  - 영상을 하이라이트 · 해저 잔향 · 그림자로 분할한 뒤 공간 관계로 표적을 추출함 (Reed 등, 2003)
-  - 정합필터 기반 검출이 기본 기준선으로 쓰임 (Turin, 1960)
-- **딥러닝 전환 (2016년 이후)**
-  - CNN 기반 소나 표적 분류가 시도됨 (Williams, 2016)
-  - 학습 자료 부족을 보완하려고 일반 영상으로 사전학습된 모델을 전이함 (McKay 등, 2017)
-- **현재 흐름**
-  - YOLO 계열 · Transformer 계열 범용 탐지기를 SSS에 적용함 (Steiniger)
-  - 남은 과제
-    - 공개 실측 자료 부족 (Santos 등, 2024; Agrawal 등, 2024)
-    - 소형 표적과 해저 유사 신호로 인한 오경보 (Cui 등, 2025)
-    - 해저 · 조사 조건이 바뀔 때의 성능 저하 (de Bodinat 등, 2020)
+- 측면주사 소나 기뢰 탐지는 정합필터 · 하이라이트–그림자 기반(Reed 등, 2003)에서 CNN · Transformer 탐지기로 넘어오는 중
+- 실제 운용의 걸림돌
+  - 공개 실측 자료 부족 (Santos 등, 2024)
+  - 작은 표적의 오경보 (Cui 등, 2025)
+  - 해역 · 조사 조건이 바뀔 때의 성능 저하 (de Bodinat 등, 2020)
 
-## 2. 연구 목적
+## Benchmark Setup
 
-- 공개 AUV SSS 자료(Santos 등, 2024)를 촬영 연도별로 나눠 미학습 연도의 탐지 성능을 평가함
-  - 학습 2015 · 2017 · 2021 → 시험 2010 · 2018 (영상 578장, 물체 114개). 연도 분할은 본 프로젝트에서 설정함
-  - 성능 지표: 영상당 평균 오경보 수(FA/image)별 탐지율(Pd)
-- 검토 사항
-  - 미학습 조사 연도에서의 탐지 성능 수준
-  - 미탐지 표적 특성 분석을 통한 성능 저하 요인 규명
-  - 학습 자료 보강과 모델 규모 확대의 효과 비교
-  - 하이라이트–그림자 물리 특징의 오경보 저감 및 연도 간 일반화 기여 여부
-
-## 3. 결과
-
-| 검토 사항 | 결과 |
+| 항목 | 내용 |
 |---|---|
-| 미학습 연도 탐지 성능 | YOLOv8n 탐지율 59.6% (FA/image 1), 78.1% (4). 정합필터 4.3% (1) |
-| 성능 저하 요인 | 미탐지가 30–50 px 표적에 집중 (탐지율 59%). 학습 표적 크기 중앙값 55 px > 시험 39 px |
-| 자료 보강과 모델 규모 | 크기 맞춤 증강: 탐지율 +13%p (FA/image 8). 모델 3.1 M → 32.8 M: 탐지율 변화 없음, CPU 추론 시간 2.5–14배 증가 |
-| 물리 특징의 기여 | 재판정으로 탐지율 59.6% → 70.2% (FA/image 1). 연도 변화 시 분류 성능 저하폭: 물리 특징 0.04 < DINOv2 0.15 |
+| 자료 | Santos 등 (2024), AUV SSS JPEG 1,170장 · MILCO / NOMBO |
+| 분할 | 학습 2015 · 2017 · 2021 → 시험 2010 · 2018 (영상 578장, 물체 114개), 본 벤치마크에서 설정 |
+| 탐지기 | 정합필터 · YOLOv8n · YOLOv8s · RT-DETR-l |
+| 학습 자료 | 기본 증강만 / + 크기 맞춤 증강 (그림자 보존 붙여넣기) |
+| 보조 | 하이라이트–그림자 물리 특징 재판정 |
+| 지표 | 영상당 평균 오경보 수(FA/image)별 탐지율 Pd · CPU / GPU 추론 시간 |
 
-### 3.1 미학습 연도 탐지 성능
+## Results
+
+| 비교 | 결과 |
+|---|---|
+| AI 탐지기 vs 정합필터 | Pd 59.6% vs 4.3% (FA/image 1) |
+| 크기 맞춤 증강 | Pd +13%p (FA/image 8), 30–50 px 표적 59% → 79% |
+| 모델 규모 (3.1 → 32.8 M) | Pd 같음, CPU 추론 132 ms → 1,816 ms |
+| 물리 특징 재판정 | Pd 59.6% → 70.2% (FA/image 1) |
+
+### AI 탐지기 vs 정합필터
 
 | 탐지 (시험 연도 2010 · 2018) | Pd @ FA/image 1 | Pd @ 4 |
 |---|---|---|
@@ -78,10 +70,10 @@
 
 </details>
 
-### 3.2 성능 저하 요인과 크기 맞춤 증강
+### 크기 맞춤 증강
 
 - 미탐지 표적은 30–50 px(1024 px 기준)에 집중되고(Pd 59%), 학습 표적은 큰 표적이 많은 2015년 장면이 대부분임
-- 학습 장면만으로 증강 타일 1,081장을 만들어 기존 타일에 더해 학습함 ([`src/prep_aug.py`](src/prep_aug.py))
+- 학습 장면만으로 증강 타일 1,081장을 만들어 기존 타일에 더해 학습함 ([`src/prep_aug.py`](src/prep_aug.py)). 소형 객체 붙여넣기 증강(Kisantal 등, 2019)을 소나 그림자 방향에 맞게 변형함
   - 축소(scale-down): 표적이 26–50 px가 되도록 영상을 줄이고, 연도별 반복 횟수로 균형을 맞춤
   - 붙여넣기(copy-paste): 표적과 그림자를 함께 잘라 다른 학습 장면의 같은 쪽(nadir 기준)에 합성함
   - 광도 증강: 스페클, 감마, 블러, JPEG 재압축
@@ -112,7 +104,7 @@
 
 </details>
 
-### 3.3 모델 규모 비교
+### 모델 규모와 추론 시간
 
 - 같은 타일 · 설정 · 60 epoch로 YOLOv8n · YOLOv8s · RT-DETR-l을 학습하고, 영상 1장당 추론 시간을 측정함 (RTX 3070 Ti PC)
 
@@ -136,7 +128,7 @@
 
 </details>
 
-### 3.4 하이라이트–그림자 물리 특징
+### 하이라이트–그림자 물리 특징 재판정
 
 <p align="center"><img src="docs/figures/highlight_shadow.png" width="95%" alt="Side-scan frame, across-track highlight-shadow profiles and oriented patches"></p>
 <p align="center"><sub>측면주사 영상, 횡방향 하이라이트–그림자 프로파일, nadir 기준으로 정렬한 패치</sub></p>
@@ -171,46 +163,39 @@
 
 </details>
 
-## 4. 고찰
+## Takeaways
 
-- **표적 크기 분포와 자료 보강**
-  - 미탐지가 소형 표적(30–50 px)에 집중되고, 해당 크기에 맞춘 증강으로 탐지율이 향상됨
-  - 일반 영상의 소형 객체 탐지 한계와 같은 양상임: 소형 객체를 포함한 학습 영상이 적고 앵커 정합이 불리함 (Kisantal 등, 2019)
-  - 같은 연구에서 소형 객체 복제 · 붙여넣기로 소형 객체 탐지 성능이 7.1% 향상됨 (Kisantal 등, 2019)
-  - 본 연구는 이를 소나에 맞게 변형함: 표적과 그림자를 함께 이동하고 nadir 기준으로 그림자 방향을 유지함
-- **모델 규모와 조사 조건 변화**
-  - 모델을 키워도 탐지율이 향상되지 않음 → 성능 저하의 주원인은 모델 표현력보다 학습 · 시험 자료의 분포 차이로 판단됨
-  - 해저 질감 변화가 소나 ATR 성능을 크게 좌우한다는 보고와 일치함 (de Bodinat 등, 2020)
-  - Transformer 탐지기는 수렴이 느리고 소형 객체 성능이 낮음 (Zhu 등, 2021) → RT-DETR-l의 전체 영상 추론 성능 저하와 부합함
-- **물리 특징의 역할**
-  - 음향 그림자는 기뢰유사물체와 해저 배경을 구별하는 핵심 단서임 (Reed 등, 2003; Mukherjee 등, 2011)
-  - 연도 변화 시 분류 성능 저하폭이 사전학습 특징보다 작고, 재판정으로 오경보를 줄임 → 학습 기반 모델의 조사 조건 의존성을 보완하는 수단으로 활용 가능함
-- **탑재 환경**
-  - AUV 탑재 시 전력 · 메모리 · 실시간 처리 제약으로 모델 크기가 실질적 제약이 됨 (Aubard 등, 2024)
-  - 경량 모델(3.1 M)이 대형 모델(32.8 M)과 대등한 탐지율에 CPU 추론 14배 단축 → 탑재용 경량 모델의 실용성 확인
-- **운용 지표와 향후 과제**
-  - 공개 영상 연구의 일반적 지표인 영상당 평균 오경보 수로 보고함 (Mukherjee 등, 2011; Steiniger)
-  - 실제 기뢰 대항전 운용 평가는 탐지확률과 면적당 오경보 밀도를 사용함 (arXiv:2404.18663)
-  - 향후 과제
-    - 운용 지표 환산용 메타데이터(거리 설정, 픽셀 크기) 확보
-    - 새 해역 자료를 이용한 온라인 적응(de Bodinat 등, 2020)처럼, 소량 라벨 기반 임계값 재보정
+- 탐지 성능의 결정 요인
+  - → 모델 크기보다 학습 자료의 표적 크기 분포
+- 탑재용 모델 선택
+  - → 경량 모델(YOLOv8n, 3.1 M): Pd 동등, CPU 추론 14배 빠름
+- 하이라이트–그림자 물리 특징
+  - → AI 탐지기 오경보 저감용 보조 판정
 
-## 참고문헌
+## Limitations → Next Steps
 
-- Agrawal, A. 등 (2024). Syn2Real domain generalization for underwater mine-like object detection using side-scan sonar. [arXiv:2410.12953](https://arxiv.org/abs/2410.12953)
-- Aubard, M., Antal, L., Madureira, A., & Ábrahám, E. (2024). Knowledge distillation in YOLOX-ViT for side-scan sonar object detection. [arXiv:2403.09313](https://arxiv.org/abs/2403.09313)
-- Cui, X., Zhang, J., Zhang, L., Zhang, Q., & Han, J. (2025). Small object detection in side-scan sonar images based on SOCA-YOLO and image restoration. *Frontiers in Marine Science*, 12. [doi:10.3389/fmars.2025.1542832](https://doi.org/10.3389/fmars.2025.1542832)
+- 고정 분할 1개 · 학습 1회 (재학습 시 Pd 약 9%p 차이)
+  - → 연도 단위 교차검증(leave-one-year-out)과 반복 실행으로 평균 ± 표준편차 보고
+- 영상 단위 무작위 k-fold 불가 (같은 장면 축소 복사본 417쌍으로 누수 발생)
+  - → 장면 · 연도 단위 그룹 분할(group k-fold)
+- 연도마다 해저 · 장비 설정 · 해상도 · 표적 구성이 함께 바뀌어 원인 특정 곤란
+  - → 연도별 성능 분리 보고, 표적 크기 · 해저 유형별 요인 분석
+- 시험 물체 114개 중 94개가 2018년에 편중 (95% CI 약 ±9%p)
+  - → 교차검증으로 모든 연도를 한 번씩 시험
+- 증강 방향을 시험 연도 진단을 보고 설정 (효과 과대 추정 가능)
+  - → 교차검증에서는 학습 연도 정보만으로 증강 범위 설정
+- 검증 장면 26장으로 epoch · 임계값 선택 불안정
+  - → 고정 epoch 사용, 교차검증 fold 단위로 임계값 설정
+- JPEG 입력 · 단일 장비 계열 · 면적당 오경보 환산 정보 없음
+  - → 원시 신호 · 메타데이터(거리 설정 · 픽셀 크기)가 있는 자료로 확장
+
+## References
+
+- Cui, X. 등 (2025). Small object detection in side-scan sonar images based on SOCA-YOLO and image restoration. *Frontiers in Marine Science*, 12. [doi:10.3389/fmars.2025.1542832](https://doi.org/10.3389/fmars.2025.1542832)
 - de Bodinat, J., Guerneve, T., Vazquez, J., & Jegorova, M. (2020). Similarity-based data mining for online domain adaptation of a sonar ATR system. [arXiv:2009.07560](https://arxiv.org/abs/2009.07560)
 - Kisantal, M., Wojna, Z., Murawski, J., Naruniec, J., & Cho, K. (2019). Augmentation for small object detection. [arXiv:1902.07296](https://arxiv.org/abs/1902.07296)
-- McKay, J. 등 (2017). What's mine is yours: Pretrained CNNs for limited training sonar ATR. OCEANS 2017. [arXiv:1706.09858](https://arxiv.org/abs/1706.09858)
-- Mukherjee, K., Gupta, S., Ray, A., & Phoha, S. (2011). Symbolic analysis of sonar data for underwater target detection. *IEEE Journal of Oceanic Engineering*, 36(2).
 - Reed, S., Petillot, Y., & Bell, J. (2003). An automatic approach to the detection and extraction of mine features in sidescan sonar. *IEEE Journal of Oceanic Engineering*, 28(1), 90–105.
 - Santos, N. P., Moura, R., Torgal, G. S., Lobo, V., & de Castro Neto, M. (2024). Side-scan sonar imaging data of underwater vehicles for mine detection. *Data in Brief*, 53, 110132. [doi:10.1016/j.dib.2024.110132](https://doi.org/10.1016/j.dib.2024.110132)
-- Steiniger, Y. Transformers and ensembles for object detection in sidescan sonar images. German Aerospace Center (DLR). [elib.dlr.de/216917](https://elib.dlr.de/216917/)
-- Turin, G. L. (1960). An introduction to matched filters. *IRE Transactions on Information Theory*, 6(3), 311–329.
-- Williams, D. P. (2016). Underwater target classification in synthetic aperture sonar imagery using deep convolutional neural networks. *ICPR 2016*, 2497–2502.
-- Zhu, X., Su, W., Lu, L., Li, B., Wang, X., & Dai, J. (2021). Deformable DETR: Deformable transformers for end-to-end object detection. *ICLR 2021*.
-- Terrain characterisation for online adaptability of automated sonar processing: Lessons learnt from operationally applying ATR to sidescan sonar in MCM applications (2024). [arXiv:2404.18663](https://arxiv.org/abs/2404.18663)
 - 탐지 모델: YOLO (Redmon 등, CVPR 2016) · Ultralytics YOLOv8 (2023) · RT-DETR (Zhao 등, CVPR 2024) · DINOv2 (Oquab 등, TMLR 2024)
 
 ## Dataset
@@ -254,14 +239,6 @@ python fig_pipeline.py  # 흐름도 · 모델 구조도
 | `src/gpu_runs` | GPU 비교 실행 기록 (환경 · 학습 시간 · 학습 기록 · 평가 · 추론 시간) |
 | `docs` | 그림, 결과 리포트(HTML) |
 | `colab` | GPU 비교 실험 노트북 |
-
-## Limitations
-
-- 입력은 원시 신호가 아닌 JPEG 영상임
-- 검증 장면이 26장으로 작아 epoch · 임계값 선택이 불안정함
-- 패치 분류 표는 정답 위치 패치 조건의 결과임
-- 공개 자료에 거리 설정과 픽셀 크기가 없어 오경보를 면적당으로 환산하지 못함
-- 한 자료(한 장비 · 해역 계열)의 결과임
 
 ## License
 
