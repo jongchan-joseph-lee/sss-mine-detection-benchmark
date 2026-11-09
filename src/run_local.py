@@ -29,11 +29,21 @@ def step(msg):
     print(f"\n=== {msg}", flush=True)
 
 
-def run(args, env=ENV):
+def run(args, env=ENV, done=None):
+    """done(): returns True if the step's outputs are complete (a crash at process exit is then ignored)"""
     print(">", " ".join(args), flush=True)
     r = subprocess.run([sys.executable] + args, env=env)
     if r.returncode != 0:
+        if done is not None and done():
+            print(f"(exit code {r.returncode} after the step finished; outputs are complete, continuing)", flush=True)
+            return
         sys.exit(f"failed: {' '.join(args)}")
+
+
+def finished(run_dir, epochs):
+    csv = os.path.join(run_dir, "results.csv")
+    return os.path.exists(os.path.join(run_dir, "weights", "last.pt")) and os.path.exists(csv) \
+        and sum(1 for _ in open(csv)) - 1 >= epochs
 
 
 def main():
@@ -75,12 +85,15 @@ def main():
     for mk, w, dk in GRID:
         name = f"{mk}_{dk}{a.epochs}"
         run(["train_exp.py", "--auto", "--data", DATA[dk], "--model", w, "--epochs", str(a.epochs), "--name", name,
-             "--device", "0", "--workers", str(a.workers), "--batch", str(a.batch), "--project", project])
+             "--device", "0", "--workers", str(a.workers), "--batch", str(a.batch), "--project", project],
+            done=lambda d=os.path.join(project, name): finished(d, a.epochs))
         runs[name] = os.path.join(project, name, "weights", "last.pt")
 
     step("test-year evaluation")
     args = ["b5_eval.py", "ref=runs/detect/runs/yolo_tiles/weights/best.pt"] + [f"{k}={v}" for k, v in runs.items()]
-    run(args, env=dict(ENV, B5_OUT="b5_eval_gpu.json"))
+    if os.path.exists("b5_eval_gpu.json"):
+        os.remove("b5_eval_gpu.json")
+    run(args, env=dict(ENV, B5_OUT="b5_eval_gpu.json"), done=lambda: os.path.exists("b5_eval_gpu.json"))
 
     step("results_gpu.zip")
     with zipfile.ZipFile("results_gpu.zip", "w", zipfile.ZIP_DEFLATED) as z:

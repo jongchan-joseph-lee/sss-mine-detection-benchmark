@@ -8,6 +8,7 @@ Same hyper-parameters as train_yolo.py except epochs and patience, so runs diffe
 """
 import argparse
 import os
+import sys
 
 from ultralytics import RTDETR, YOLO
 
@@ -46,8 +47,10 @@ def main():
         m.train(data=a.data, epochs=a.epochs, imgsz=a.imgsz, batch=a.batch, device=a.device, workers=a.workers,
                 project=a.project, name=a.name, exist_ok=True, plots=False, flipud=0.5, fliplr=0.5,
                 hsv_h=0.0, hsv_s=0.0, hsv_v=0.3, seed=a.seed, deterministic=True, patience=100, verbose=False)
-    print("TRAIN_DONE", a.name)
+    print("TRAIN_DONE", a.name, flush=True)
 
 
 if __name__ == "__main__":
     main()
+    sys.stdout.flush()
+    os._exit(0)          # skip interpreter teardown (CUDA/threads can crash it on Windows after a finished run)
