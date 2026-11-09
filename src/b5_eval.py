@@ -18,7 +18,7 @@ from PIL import Image
 
 src = open("b2.py").read()
 exec(src[src.index("def match("):src.index("det_res = {}")])          # match(), froc()
-FILES = sorted(glob.glob("tiles/test_full/images/*.png"))
+FILES = sorted(glob.glob(os.path.join("tiles", "test_full", "images", "*.png")))
 GRID = (0.25, 0.5, 1, 2, 4, 8)
 BANDS = [(0, 30), (30, 50), (50, 1e9)]
 os.makedirs("b5_dets", exist_ok=True)
@@ -26,7 +26,8 @@ DEV = os.environ.get("B5_DEVICE", "cpu")               # "0" on a GPU runtime
 
 
 def labels(f):
-    lf = f.replace("/images/", "/labels/")[:-4] + ".txt"
+    # path-separator safe (glob returns "...images\\x.png" on Windows)
+    lf = os.path.join(os.path.dirname(os.path.dirname(f)), "labels", os.path.basename(f)[:-4] + ".txt")
     if not os.path.exists(lf):
         return []
     return [[int(p.split()[0])] + [float(x) for x in p.split()[1:]] for p in open(lf).read().split("\n") if p.strip()]

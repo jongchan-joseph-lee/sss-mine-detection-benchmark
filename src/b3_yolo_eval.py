@@ -30,7 +30,7 @@ def froc_dir(d):
     per_img = []
     for f in sorted(glob.glob(f"{d}/images/*.png")):
         lab = []
-        lf = f.replace("/images/", "/labels/")[:-4] + ".txt"
+        lf = os.path.join(os.path.dirname(os.path.dirname(f)), "labels", os.path.basename(f)[:-4] + ".txt")
         if os.path.exists(lf):
             lab = [[int(p.split()[0])] + [float(x) for x in p.split()[1:]] for p in open(lf).read().strip().splitlines() if p.strip()]
         r = m.predict(f, imgsz=1024, conf=0.01, device="cpu", verbose=False)[0]
